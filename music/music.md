@@ -9,4 +9,5 @@ They must also contain the following id3 tags:
 - Artist
 - Title
 - Genre
+- Tracklist in Comment
 - Cover Art

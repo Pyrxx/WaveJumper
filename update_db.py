@@ -46,6 +46,7 @@ def connect_db():
         artist TEXT,
         title TEXT,
         genre TEXT,
+        comment TEXT,
         cover_base64 TEXT,
         file_hash TEXT
     )
@@ -74,7 +75,7 @@ def delete_files_not_in_directory(cursor, conn, existing_files):
         logging.error(f"Error deleting files not in directory: {e}")
         conn.rollback()
 
-def update_or_insert_file(cursor, conn, filename, artist, title, genre, cover_b64, file_hash):
+def update_or_insert_file(cursor, conn, filename, artist, title, genre, comment, cover_b64, file_hash):
     try:
         # check if file already in database and skip
         cursor.execute("SELECT file_hash FROM tracks WHERE filename = ?", (filename,))
@@ -86,15 +87,15 @@ def update_or_insert_file(cursor, conn, filename, artist, title, genre, cover_b6
             else:
                 # update
                 cursor.execute("""
-                UPDATE tracks SET artist=?, title=?, genre=?, cover_base64=?, file_hash=?
+                UPDATE tracks SET artist=?, title=?, genre=?, comment=?, cover_base64=?, file_hash=?
                 WHERE filename=?
-                """, (artist, title, genre, cover_b64, file_hash, filename))
+                """, (artist, title, genre, comment, cover_b64, file_hash, filename))
         else:
             # insert
             cursor.execute("""
-            INSERT INTO tracks (filename, artist, title, genre, cover_base64, file_hash)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """, (filename, artist, title, genre, cover_b64, file_hash))
+            INSERT INTO tracks (filename, artist, title, genre, comment, cover_base64, file_hash)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (filename, artist, title, genre, comment, cover_b64, file_hash))
         conn.commit()
     except Exception as e:
         logging.error(f"Error updating/inserting file {filename}: {e}")
@@ -128,9 +129,10 @@ def main():
                 artist = tags.get("\xa9ART", [None])[0]
                 title = tags.get("\xa9nam", [None])[0]
                 genre = tags.get("\xa9gen", [None])[0]
+                comment = tags.get("\xa9cmt", [None])[0]
                 cover_b64 = extract_cover_base64(tags)
 
-                update_or_insert_file(cursor, conn, filename, artist, title, genre, cover_b64, file_hash)
+                update_or_insert_file(cursor, conn, filename, artist, title, genre, comment, cover_b64, file_hash)
             except Exception as e:
                 logging.error(f"Error processing {filename}: {e}")
 
