@@ -37,6 +37,14 @@ def extract_cover_base64(tags):
         return base64.b64encode(cover_bytes).decode("utf-8")
     return None
 
+def extract_date_from_title(title):
+    if not title:
+        return None
+
+    # Get the last 12 characters, remove parentheses
+    date_str = title[-12:].replace("(", "").replace(")", "")
+    return date_str
+
 def connect_db():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -45,6 +53,7 @@ def connect_db():
         filename TEXT UNIQUE,
         artist TEXT,
         title TEXT,
+        date TEXT,
         genre TEXT,
         comment TEXT,
         cover_base64 TEXT,
@@ -75,7 +84,7 @@ def delete_files_not_in_directory(cursor, conn, existing_files):
         logging.error(f"Error deleting files not in directory: {e}")
         conn.rollback()
 
-def update_or_insert_file(cursor, conn, filename, artist, title, genre, comment, cover_b64, file_hash):
+def update_or_insert_file(cursor, conn, filename, artist, title, date, genre, comment, cover_b64, file_hash):
     try:
         # check if file already in database and skip
         cursor.execute("SELECT file_hash FROM tracks WHERE filename = ?", (filename,))
@@ -87,15 +96,15 @@ def update_or_insert_file(cursor, conn, filename, artist, title, genre, comment,
             else:
                 # update
                 cursor.execute("""
-                UPDATE tracks SET artist=?, title=?, genre=?, comment=?, cover_base64=?, file_hash=?
+                UPDATE tracks SET artist=?, title=?, genre=?, comment=?, cover_base64=?, file_hash=?, date=?
                 WHERE filename=?
-                """, (artist, title, genre, comment, cover_b64, file_hash, filename))
+                """, (artist, title, genre, comment, cover_b64, file_hash, date, filename))
         else:
             # insert
             cursor.execute("""
-            INSERT INTO tracks (filename, artist, title, genre, comment, cover_base64, file_hash)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (filename, artist, title, genre, comment, cover_b64, file_hash))
+            INSERT INTO tracks (filename, artist, title, genre, comment, cover_base64, file_hash, date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (filename, artist, title, genre, comment, cover_b64, file_hash, date))
         conn.commit()
     except Exception as e:
         logging.error(f"Error updating/inserting file {filename}: {e}")
@@ -131,8 +140,10 @@ def main():
                 genre = tags.get("\xa9gen", [None])[0]
                 comment = tags.get("\xa9cmt", [None])[0]
                 cover_b64 = extract_cover_base64(tags)
+                date = extract_date_from_title(title)
+                title = title[:-13]
 
-                update_or_insert_file(cursor, conn, filename, artist, title, genre, comment, cover_b64, file_hash)
+                update_or_insert_file(cursor, conn, filename, artist, title, date, genre, comment, cover_b64, file_hash)
             except Exception as e:
                 logging.error(f"Error processing {filename}: {e}")
 
