@@ -5,21 +5,23 @@ The `update_db.py` script processes M4A audio files in the "music" folder and up
 - Calculates file hashes for each M4A file
 - Extracts metadata (artist, title, genre, comment) and cover art
 - Extracts date from the last 12 characters of the title tag
+- Generates waveform data for each audio file
 - Updates or inserts records in the database with the extracted date
 - Deletes records for files no longer present in the folder
 - Sorts tracks by filename
 
 ## Prerequisites
-The script requires the following Python modules:
-- `sqlite3` (included with Python standard library)
-- `hashlib` (included with Python standard library)
-- `base64` (included with Python standard library)
-- `os` (included with Python standard library)
-- `logging` (included with Python standard library)
-- `mutagen.mp4` (external package)
+The script requires the following external Python modules:
+- `mutagen.mp4`
+- `librosa`
+- `numpy`
+- `audioread.ffdec`
 
 ## Installation
-To install the required external module, run:
+To install the required external modules, run:
 ```bash
-pip install mutagen
+pip install mutagen librosa numpy
 ```
+
+## System Requirements
+- FFmpeg must be installed system-wide for waveform generation
