@@ -149,7 +149,7 @@ def main():
     # delete files not in directory
     delete_files_not_in_directory(cursor, conn, existing_files)
 
-    # process all actual files
+    # process all actual files if they are new or has changed
     for filename in existing_files:
         filepath = os.path.join(music_folder, filename)
         file_hash = calculate_file_hash(filepath)
