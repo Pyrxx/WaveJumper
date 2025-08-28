@@ -2,13 +2,13 @@
 
 ## Functionality
 The `update_db.py` script processes M4A audio files in the "music" folder and updates an SQLite database (`music.db`) with metadata from these files. It:
-- Calculates file hashes for each M4A file
+- Calculates file hashes
+- Generates waveform data
 - Extracts metadata (artist, title, genre, comment) and cover art
 - Extracts date from the last 12 characters of the title tag
-- Generates waveform data for each audio file
-- Updates or inserts records in the database with the extracted date
 - Deletes records for files no longer present in the folder
-- Sorts tracks by filename
+- Updates or inserts records in the database
+- Sorts tracks in descending order by filename
 
 ## Prerequisites
 The script requires the following external Python modules:

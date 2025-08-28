@@ -140,16 +140,16 @@ def update_or_insert_file(cursor, conn, filename, artist, title, date, genre, co
 def main():
     conn, cursor = connect_db()
 
-    # read files and hashes
+    # read files
     existing_files = set()
     for filename in os.listdir(music_folder):
         if filename.lower().endswith(".m4a"):
             existing_files.add(filename)
 
-    # delete files not in directory
+    # delete files from db not longer present in music directory
     delete_files_not_in_directory(cursor, conn, existing_files)
 
-    # process all actual files if they are new or has changed
+    # process all actual files if they are new or have changed
     for filename in existing_files:
         filepath = os.path.join(music_folder, filename)
         file_hash = calculate_file_hash(filepath)
@@ -171,7 +171,7 @@ def main():
         update_or_insert_file(cursor, conn, filename, artist, title, date, genre, comment, waveform_json, cover_b64, file_hash)
 
     # sort by filename
-    cursor.execute("CREATE TABLE IF NOT EXISTS sorted_tracks AS SELECT * FROM tracks ORDER BY filename")
+    cursor.execute("CREATE TABLE IF NOT EXISTS sorted_tracks AS SELECT * FROM tracks ORDER BY filename DESC")
     cursor.execute("DROP TABLE tracks")
     cursor.execute("ALTER TABLE sorted_tracks RENAME TO tracks")
     conn.commit()
