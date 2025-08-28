@@ -4,7 +4,7 @@
 - The script scans the target directory for audio files with a .m4a extension.
 - For each file, it computes a SHA-256 hash to uniquely identify its content.
 - It uses the Mutagen library to extract metadata such as artist, title, genre, comments, and embedded cover art from the audio file.
-- It generates a normalized waveform summary using librosa and audioread, representing the overall amplitude for visualization purposes.
+- It gets the duration and generates a normalized waveform summary using librosa and audioread, representing the overall amplitude for visualization purposes.
 - It parses and removes a date from the track title based on naming conventions.
 - All extracted data is compiled into a structured list.
 - The tracks are sorted by filename in descending order.
