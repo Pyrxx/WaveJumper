@@ -11,18 +11,21 @@ The `update_db.py` script processes M4A audio files in the "music" folder and up
 - Inserts records for new files in the database
 - Sorts the database records in descending order by filename
 
-## Prerequisites
-The script requires the following external Python modules:
-- `mutagen.mp4`
+## Dependencies
+
+### External Python modules
+
+- `mutagen`
 - `librosa`
 - `numpy`
-- `audioread.ffdec`
+- `audioread`
 
-## Installation
-To install the required external modules, run:
+To install them, run:
 ```bash
 pip install mutagen librosa numpy
 ```
 
-## System Requirements
+`audioread` is automatically installed when installing `librosa`. It is deprecated, but librosas default method `soundfile` cannot handle certain codecs yet.
+
+### System Requirements
 - FFmpeg must be installed system-wide for waveform generation
