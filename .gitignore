@@ -1,4 +1,4 @@
 /dump
 /music/*.m4a
-/update_db.err
-/music.db
+/music/music.js
+/update.err
