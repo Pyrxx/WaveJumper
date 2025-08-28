@@ -9,7 +9,9 @@ They must contain the following id3 tags:
 - Artist
 - Title (YYYY.MM.DD)
 - Genre
-- Tracklist in Comment
 - Cover Art
+
+They can contain the following id3 tags:
+- Tracklist in comment field
 
 Since the date field usually only contains the year, the exact date must be entered with the year, month, and day in parentheses at the end of the title.
