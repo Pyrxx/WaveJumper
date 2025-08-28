@@ -26,7 +26,7 @@ sys.excepthook = global_exception_handler
 
 # Settings
 music_folder = "music"
-output_js = os.path.join(music_folder, "music.js")
+output_js = "music.js"
 
 def calculate_file_hash(filepath):
     hash_func = hashlib.sha256()
@@ -68,7 +68,10 @@ def compute_waveform(audio_path, target_length=1000):
     # Serialize waveform list as JSON string
     waveform_json = json.dumps(waveform)
 
-    return waveform_json
+    # Calculate duration in seconds
+    duration = int(round(total_samples / sr))
+
+    return waveform_json, duration
 
 def extract_date_from_title(title):
     if not title:
@@ -94,7 +97,7 @@ def main():
         title = tags.get("\xa9nam", [None])[0]
         genre = tags.get("\xa9gen", [None])[0]
         comment = tags.get("\xa9cmt", [None])[0]
-        waveform_json = compute_waveform(filepath)
+        waveform_json, duration = compute_waveform(filepath)
         cover_b64 = extract_cover_base64(tags)
         date = extract_date_from_title(title)
         title = title[:-13] if title else None
@@ -105,6 +108,7 @@ def main():
             title,
             date,
             genre,
+            duration,
             comment,
             waveform_json,
             cover_b64,
@@ -118,7 +122,7 @@ def main():
     with open(output_js, "w", encoding="utf-8") as f:
         f.write("const musicData = ")
         json.dump(tracks, f, indent=2, ensure_ascii=False)
-        f.write(";\n\nexport default musicData;\n")
+        f.write(";\n")
 
     print("music.js generated and sorted")
 
