@@ -7,8 +7,9 @@ The `update_db.py` script processes M4A audio files in the "music" folder and up
 - Extracts metadata (artist, title, genre, comment) and cover art
 - Extracts date from the last 12 characters of the title tag
 - Deletes records for files no longer present in the folder
-- Updates or inserts records in the database
-- Sorts tracks in descending order by filename
+- Detects file changes and updates the corresponding record in the database
+- Inserts records for new files in the database
+- Sorts the database records in descending order by filename
 
 ## Prerequisites
 The script requires the following external Python modules:
