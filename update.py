@@ -76,32 +76,32 @@ def extract_cover_base64(tags):
 
     return None
 
-def compute_waveform(audio_path, target_length=1000):
+def compute_amplitudeData(audio_path, target_length=1000):
     aro = audioread.ffdec.FFmpegAudioFile(audio_path)
     y, sr = librosa.load(aro, sr=None, mono=True)
 
     total_samples = len(y)
     samples_per_bin = total_samples // target_length
-    waveform = []
+    amplitudeData = []
 
     for i in range(target_length):
         start = i * samples_per_bin
         end = start + samples_per_bin
         bin_slice = y[start:end]
         peak = float(np.max(np.abs(bin_slice))) if len(bin_slice) > 0 else 0.0
-        waveform.append(peak)
+        amplitudeData.append(peak)
 
     # normalize
-    max_peak = max(waveform) if waveform else 1.0
-    waveform = [amp / max_peak for amp in waveform]
+    max_peak = max(amplitudeData) if amplitudeData else 1.0
+    amplitudeData = [amp / max_peak for amp in amplitudeData]
 
-    # Serialize waveform list as JSON string
-    waveform_json = json.dumps(waveform)
+    # Serialize amplitudeData list as JSON string
+    amplitudeData_json = json.dumps(amplitudeData)
 
     # Calculate duration in seconds
     duration = int(round(total_samples / sr))
 
-    return waveform_json, duration
+    return amplitudeData_json, duration
 
 def extract_date_from_title(title):
     if not title:
@@ -127,7 +127,7 @@ def main():
         title = tags.get("\xa9nam", [None])[0]
         genre = tags.get("\xa9gen", [None])[0]
         comment = tags.get("\xa9cmt", [None])[0]
-        waveform_json, duration = compute_waveform(filepath)
+        amplitudeData_json, duration = compute_amplitudeData(filepath)
         cover_b64 = extract_cover_base64(tags)
         date = extract_date_from_title(title)
         title = title[:-13] if title else None
@@ -140,7 +140,7 @@ def main():
             genre,
             duration,
             comment,
-            waveform_json,
+            amplitudeData_json,
             cover_b64,
             file_hash
         ])
