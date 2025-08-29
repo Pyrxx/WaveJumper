@@ -9,6 +9,8 @@ import audioread.ffdec
 import numpy as np
 import json
 from mutagen.mp4 import MP4, MP4Cover
+from io import BytesIO
+from PIL import Image
 
 # Configure logging to write errors to update_db.err
 logging.basicConfig(
@@ -35,11 +37,6 @@ def calculate_file_hash(filepath):
             hash_func.update(chunk)
     return hash_func.hexdigest()
 
-import base64
-from io import BytesIO
-from PIL import Image
-from mutagen.mp4 import MP4Cover
-
 def extract_cover_base64(tags):
     covers = tags.get("covr")
     if covers:
@@ -64,7 +61,7 @@ def extract_cover_base64(tags):
                 img = img.crop((left, top, right, bottom))
 
             # Resize to 512x512
-            img = img.resize((512, 512), Image.Resampling.LANCZOS)
+            img = img.resize((16, 16), Image.Resampling.LANCZOS)
 
             # Convert back to bytes (PNG format to preserve quality and transparency if any)
             buffered = BytesIO()
@@ -76,7 +73,7 @@ def extract_cover_base64(tags):
 
     return None
 
-def compute_amplitudeData(audio_path, target_length=1000):
+def compute_amplitudeData(audio_path, target_length=50):
     aro = audioread.ffdec.FFmpegAudioFile(audio_path)
     y, sr = librosa.load(aro, sr=None, mono=True)
 
@@ -140,8 +137,8 @@ def main():
             genre,
             duration,
             comment,
-            amplitudeData_json,
             cover_b64,
+            amplitudeData_json,
             file_hash
         ])
 
