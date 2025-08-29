@@ -35,15 +35,45 @@ def calculate_file_hash(filepath):
             hash_func.update(chunk)
     return hash_func.hexdigest()
 
+import base64
+from io import BytesIO
+from PIL import Image
+from mutagen.mp4 import MP4Cover
+
 def extract_cover_base64(tags):
     covers = tags.get("covr")
     if covers:
         cover_data = covers[0]
+        # Get bytes from MP4Cover or use bytes directly
         if isinstance(cover_data, MP4Cover):
             cover_bytes = cover_data
         else:
             cover_bytes = cover_data.tobytes()
-        return base64.b64encode(cover_bytes).decode("utf-8")
+
+        # Load image from bytes
+        with Image.open(BytesIO(cover_bytes)) as img:
+            width, height = img.size
+
+            # Crop to 1:1 aspect ratio if needed
+            if width != height:
+                min_edge = min(width, height)
+                left = (width - min_edge) // 2
+                top = (height - min_edge) // 2
+                right = left + min_edge
+                bottom = top + min_edge
+                img = img.crop((left, top, right, bottom))
+
+            # Resize to 512x512
+            img = img.resize((512, 512), Image.Resampling.LANCZOS)
+
+            # Convert back to bytes (PNG format to preserve quality and transparency if any)
+            buffered = BytesIO()
+            img.save(buffered, format="PNG")
+            final_bytes = buffered.getvalue()
+
+        # Encode to base64 and return string
+        return base64.b64encode(final_bytes).decode("utf-8")
+
     return None
 
 def compute_waveform(audio_path, target_length=1000):
