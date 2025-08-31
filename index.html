@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Artist Profile Tracklist with Interactive Waveform</title>
+  <title>Tracklist with Interactive Waveform Audio Player</title>
   <style>
     /*
       === Modern Browser CSS Reset (Eric Meyer v2.0 adapted) ===
       Ensures consistent styling across browsers by neutralizing default styles.
-      Source: https://meyerweb.com/eric/tools/css/reset/
+      Source: [https://meyerweb.com/eric/tools/css/reset/](https://meyerweb.com/eric/tools/css/reset/)
     */
     html, body, div, span, applet, object, iframe,
     h1, h2, h3, h4, h5, h6, p, blockquote, pre,
@@ -59,7 +59,6 @@
       border-collapse: collapse;
       border-spacing: 0;
     }
-
     /* Mobile-first default: content elements width 460px */
     .content {
       width: 460px;
@@ -67,7 +66,6 @@
       box-sizing: border-box;
       user-select: none;
     }
-
     /* Playlist container is full width and uses flex column */
     #playlist-container {
       width: 100%;
@@ -79,7 +77,6 @@
       gap: 32px;
       padding-bottom: 80px; /* for footer */
     }
-
     /* Track item is the .content wrapper for each */
     .track-item.content {
       display: flex;
@@ -87,7 +84,6 @@
       width: 460px;
       box-sizing: border-box;
     }
-
     /* 1st container: cover art full width */
     .track-cover-container {
       width: 100%;
@@ -101,7 +97,6 @@
       user-select: none;
       pointer-events: none;
     }
-
     /* 2nd container: flex row for three subcontainers */
     .track-info-container {
       width: 100%;
@@ -133,7 +128,6 @@
     .btn-play-pause:hover {
       background: var(--button-hover-bg);
     }
-
     /* 2nd subcontainer: artist and title stacked */
     .artist-title-container {
       flex: 1 1 auto;
@@ -164,7 +158,6 @@
       text-overflow: ellipsis;
       color: var(--text-color-bright);
     }
-
     /* 3rd subcontainer: genre/date top row, play-pos/duration bottom row */
     .meta-info-container {
       flex: 0 0 auto;
@@ -191,7 +184,6 @@
       min-width: 138px;
       justify-content: flex-end;
     }
-
     /* 3rd container: waveform full width */
     .waveform-container {
       width: 100%;
@@ -208,7 +200,6 @@
       border-radius: 8px;
       background: transparent;
     }
-
     /* 4th container: toggle and content full width */
     .tracklist-container {
       width: 100%;
@@ -251,7 +242,6 @@
     .tracklist-content.visible {
       display: block;
     }
-
     /* THEME VARIABLES */
     :root {
       --button-bg: #383351;
@@ -282,7 +272,6 @@
         background: var(--background);
       }
     }
-
     /* Footer containing new inner container */
     #footer-controls {
       position: fixed;
@@ -328,12 +317,11 @@
       height: 6px;
       border-radius: 3px;
     }
+    
   </style>
 </head>
 <body>
-
 <div id="playlist-container" aria-label="Artist profile tracklist"></div>
-
 <div id="footer-controls" aria-label="Global audio controls">
   <div class="footer-inner-container">
     <button class="btn-play-pause" aria-label="Play/Pause global audio player">Play</button>
@@ -348,11 +336,9 @@
   /* ==== Global state ==== */
   const tracks = [];
   let playingIndex = -1;
-
   // Footer controls references
   const footerPlayBtn = document.querySelector('#footer-controls .btn-play-pause');
   const footerVolumeInput = document.querySelector('#footer-controls input[type="range"]');
-
   /** Time formatting for mm:ss */
   function formatTime(s) {
     if(!s) return '0:00';
@@ -360,7 +346,6 @@
     const ss = Math.floor(s % 60);
     return `${m}:${ss < 10 ? '0' : ''}${ss}`;
   }
-
   /** Draw waveform canvas with 1px spacing, highlight hover */
   function drawWaveform(ctx, ampData, progress, width, height, hoverIndex = -1, isHovering = false) {
     ctx.clearRect(0, 0, width, height);
@@ -368,12 +353,10 @@
     const total = ampData.length;
     const barWidth = width / (total * 2);
     const spaceWidth = barWidth;
-
     for(let i = 0; i < total; i++) {
       const amp = ampData[i];
       const barHeight = amp * height;
       const x = i * (barWidth + spaceWidth);
-
       let fillStyle;
       if(isHovering && i === hoverIndex) {
         fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--waveform-hover');
@@ -386,7 +369,6 @@
       ctx.fillRect(x, midY - barHeight / 2, barWidth, barHeight);
     }
   }
-
   /**
    * Create track item with 4 containers per new spec,
    * and manage playback and interactions.
@@ -394,7 +376,6 @@
   function createTrackElement(data, idx) {
     const trackElem = document.createElement('div');
     trackElem.className = 'track-item content';
-
     // 1st container: cover art
     const coverContainer = document.createElement('div');
     coverContainer.className = 'track-cover-container';
@@ -403,11 +384,9 @@
     coverImg.className = 'track-cover';
     coverImg.src = `data:image/png;base64,${data[7]}`;
     coverContainer.appendChild(coverImg);
-
     // 2nd container: split into 3 subcontainers
     const infoContainer = document.createElement('div');
     infoContainer.className = 'track-info-container';
-
     // 2.1 play button container (no left margin/padding)
     const playBtnContainer = document.createElement('div');
     playBtnContainer.className = 'play-btn-container';
@@ -416,7 +395,6 @@
     playPauseBtn.textContent = 'Play';
     playPauseBtn.setAttribute('aria-label', `Play or Pause ${data[2]} by ${data[1]}`);
     playBtnContainer.appendChild(playPauseBtn);
-
     // 2.2 artist/title container stacked
     const artistTitleContainer = document.createElement('div');
     artistTitleContainer.className = 'artist-title-container';
@@ -428,11 +406,9 @@
     titleDiv.textContent = data[2];
     artistTitleContainer.appendChild(artistDiv);
     artistTitleContainer.appendChild(titleDiv);
-
     // 2.3 meta container genre/date first row, time second row
     const metaContainer = document.createElement('div');
     metaContainer.className = 'meta-info-container';
-
     const genreDateRow = document.createElement('div');
     genreDateRow.className = 'genre-date-row';
     const genreDiv = document.createElement('div');
@@ -443,21 +419,17 @@
     dateDiv.textContent = data[3];
     genreDateRow.appendChild(genreDiv);
     genreDateRow.appendChild(dateDiv);
-
     const timeRow = document.createElement('div');
     timeRow.className = 'time-row';
     const timeIndicator = document.createElement('div');
     timeIndicator.className = 'track-time';
     timeIndicator.textContent = `0:00 / ${formatTime(data[5])}`;
     timeRow.appendChild(timeIndicator);
-
     metaContainer.appendChild(genreDateRow);
     metaContainer.appendChild(timeRow);
-
     infoContainer.appendChild(playBtnContainer);
     infoContainer.appendChild(artistTitleContainer);
     infoContainer.appendChild(metaContainer);
-
     // 3rd container: waveform
     const waveformContainer = document.createElement('div');
     waveformContainer.className = 'waveform-container';
@@ -466,23 +438,19 @@
     waveformCanvas.width = 600;
     waveformCanvas.height = 110;
     waveformContainer.appendChild(waveformCanvas);
-
     // 4th container: tracklist toggle & content
     const tracklistContainer = document.createElement('div');
     tracklistContainer.className = 'tracklist-container';
     let toggleBtn = null;
     let tracklistContent = null;
-
     if(data[6].trim() !== '') {
       toggleBtn = document.createElement('button');
       toggleBtn.className = 'btn-toggle-tracklist';
       toggleBtn.setAttribute('aria-expanded', 'false');
       toggleBtn.textContent = 'Show Tracklist ▼';
-
       tracklistContent = document.createElement('pre');
       tracklistContent.className = 'tracklist-content';
       tracklistContent.textContent = data[6];
-
       toggleBtn.addEventListener('click', () => {
         const expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
         toggleBtn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
@@ -492,7 +460,6 @@
       tracklistContainer.appendChild(toggleBtn);
       tracklistContainer.appendChild(tracklistContent);
     }
-
     // Append all 4 containers to track item
     trackElem.appendChild(coverContainer);
     trackElem.appendChild(infoContainer);
@@ -500,210 +467,79 @@
     if(tracklistContainer.childNodes.length) {
       trackElem.appendChild(tracklistContainer);
     }
-
-    // Initialize audio playback references and state
+    // Initialize audio element and playback state (fallback only)
     let audioElement = null;
-    let buffer = null;
-    let sourceNode = null;
-    let gainNode = null;
-
-    // Detect environment and Web Audio API support
-    const isLocalFile = location.protocol === 'file:';
-    const supportsWebAudio = ('AudioContext' in window) || ('webkitAudioContext' in window);
-    const useWebAudio = !isLocalFile && supportsWebAudio;
-
-    if(useWebAudio && !window._sharedAudioContext) {
-      window._sharedAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-    }
-
-    const audioCtx = window._sharedAudioContext;
-
     const ampData = JSON.parse(data[8]);
     const ctx = waveformCanvas.getContext('2d');
     const width = waveformCanvas.width;
     const height = waveformCanvas.height;
+    let isPlaying = false;
+    let mouseHovering = false;
+    let hoverIndex = -1;
+    const duration = data[5];
 
-    // Playback state for Web Audio API manual tracking
-    let isPlaying = false,
-      playStartTimestamp = 0,
-      currentTime = 0,
-      pausedTime = 0,
-      progressUpdater = null,
-      mouseHovering = false,
-      hoverIndex = -1,
-      duration = data[5];
+    // Fallback audio setup (HTML5 audio element)
+    audioElement = document.createElement('audio');
+    audioElement.src = `music/${data[0]}`;
+    audioElement.preload = 'metadata';
+    audioElement.style.display = 'none';
+    audioElement.controls = false;
+    trackElem.appendChild(audioElement);
 
     // Draw initial waveform (starting at 0)
     drawWaveform(ctx, ampData, 0, width, height);
 
-    // Setup fallback audio for file:// or no Web Audio
-    if(!useWebAudio) {
-      audioElement = document.createElement('audio');
-      audioElement.src = `music/${data[0]}`;
-      audioElement.preload = 'metadata';
-      audioElement.style.display = 'none';
-      audioElement.controls = false;
-      trackElem.appendChild(audioElement);
-
-      audioElement.addEventListener('timeupdate', () => {
-        if(!mouseHovering) {
-          const current = audioElement.currentTime;
-          const dur = audioElement.duration || duration;
-          const prog = dur ? current / dur : 0;
-          drawWaveform(ctx, ampData, prog, width, height);
-          timeIndicator.textContent = `${formatTime(current)} / ${formatTime(dur)}`;
-          if(playingIndex === idx) updateFooterTime(current);
-        }
-      });
-
-      audioElement.addEventListener('ended', () => {
-        playPauseBtn.textContent = 'Play';
-        if(playingIndex === idx) {
-          playingIndex = -1;
-          updateFooter(null, null, -1);
-          playNextTrack(idx);
-        }
-      });
-    }
-
-    /* Web Audio API control functions */
-    async function startWebAudioPlayback() {
-      if(audioCtx.state === 'suspended') {
-        await audioCtx.resume();
+    // Variables for time update
+    audioElement.addEventListener('timeupdate', () => {
+      if(!mouseHovering) {
+        const current = audioElement.currentTime;
+        const dur = audioElement.duration || duration;
+        const prog = dur ? current / dur : 0;
+        drawWaveform(ctx, ampData, prog, width, height);
+        timeIndicator.textContent = `${formatTime(current)} / ${formatTime(dur)}`;
+        if(playingIndex === idx) updateFooterTime(current);
       }
-      stopWebAudioSource();
-
-      if(!buffer) {
-        try {
-          const response = await fetch(`music/${data[0]}`);
-          const arrayBuffer = await response.arrayBuffer();
-          buffer = await audioCtx.decodeAudioData(arrayBuffer);
-          duration = buffer.duration;
-          timeIndicator.textContent = `0:00 / ${formatTime(duration)}`;
-        } catch(e) {
-          console.error('Error loading audio buffer via Web Audio API:', e);
-          return;
-        }
-      }
-
-      sourceNode = audioCtx.createBufferSource();
-      gainNode = audioCtx.createGain();
-      sourceNode.buffer = buffer;
-      sourceNode.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-
-      sourceNode.start(0, currentTime);
-
-      playingIndex = idx;
-      footerVolumeInput.value = gainNode.gain.value;
-
-      sourceNode.onended = () => {
-        playPauseBtn.textContent = 'Play';
-        currentTime = 0;
-        isPlaying = false;
-        if(playingIndex === idx) {
-          playingIndex = -1;
-          updateFooter(null, null, -1);
-          playNextTrack(idx);
-        }
-      };
-
-      playPauseBtn.textContent = 'Pause';
-      updateFooter(null, playPauseBtn, idx);
-      isPlaying = true;
-      startProgressUpdate();
-    }
-
-    function stopWebAudioSource() {
-      if(sourceNode) {
-        try { sourceNode.stop(); } catch {}
-        sourceNode.disconnect();
-        sourceNode = null;
-      }
-      isPlaying = false;
-      stopProgressUpdate();
-    }
-
-    function pauseWebAudioPlayback() {
-      if(isPlaying) {
-        stopWebAudioSource();
-        pausedTime = currentTime;
-        playPauseBtn.textContent = 'Play';
+    });
+    audioElement.addEventListener('ended', () => {
+      playPauseBtn.textContent = 'Play';
+      if(playingIndex === idx) {
+        playingIndex = -1;
         updateFooter(null, null, -1);
-      }
-    }
-
-    function startProgressUpdate() {
-      playStartTimestamp = performance.now() / 1000 - currentTime;
-      progressUpdater = setInterval(() => {
-        if(!mouseHovering) {
-          currentTime = (performance.now() / 1000) - playStartTimestamp;
-          if(currentTime > duration) currentTime = duration;
-          let prog = duration ? currentTime / duration : 0;
-          drawWaveform(ctx, ampData, prog, width, height);
-          timeIndicator.textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
-          if(playingIndex === idx) updateFooterTime(currentTime);
-        }
-      }, 50);
-    }
-    function stopProgressUpdate() {
-      if(progressUpdater) {
-        clearInterval(progressUpdater);
-        progressUpdater = null;
-      }
-    }
-
-    /* Play/Pause button logic */
-    playPauseBtn.addEventListener('click', () => {
-      if(useWebAudio) {
-        if(!isPlaying) {
-          if(audioCtx.state === 'suspended') audioCtx.resume().then(() => startWebAudioPlayback());
-          else startWebAudioPlayback();
-        } else {
-          pauseWebAudioPlayback();
-        }
-      } else {
-        if(audioElement.paused) {
-          tracks.forEach(({audio, btnPlay}, i) => {
-            if(i !== idx) {
-              if(audio) audio.pause();
-              btnPlay.textContent = 'Play';
-            }
-          });
-          audioElement.play();
-          playPauseBtn.textContent = 'Pause';
-          playingIndex = idx;
-          updateFooter(audioElement, playPauseBtn, idx);
-        } else {
-          audioElement.pause();
-          playPauseBtn.textContent = 'Play';
-          if(playingIndex === idx) playingIndex = -1;
-          updateFooter(null, null, -1);
-        }
+        playNextTrack(idx);
       }
     });
 
+    /* Play/Pause button logic */
+    playPauseBtn.addEventListener('click', () => {
+      if(audioElement.paused) {
+        // Pause others
+        tracks.forEach(({audio, btnPlay}, i) => {
+          if(i !== idx) {
+            if(audio) audio.pause();
+            btnPlay.textContent = 'Play';
+          }
+        });
+        audioElement.play();
+        playPauseBtn.textContent = 'Pause';
+        playingIndex = idx;
+        updateFooter(audioElement, playPauseBtn, idx);
+      } else {
+        audioElement.pause();
+        playPauseBtn.textContent = 'Play';
+        if(playingIndex === idx) playingIndex = -1;
+        updateFooter(null, null, -1);
+      }
+    });
     /* Waveform click seek */
     waveformCanvas.addEventListener('click', e => {
       const rect = waveformCanvas.getBoundingClientRect();
       const ratio = (e.clientX - rect.left) / rect.width;
-      const dur = useWebAudio ? duration : (audioElement ? audioElement.duration || data[5] : data[5]);
-
-      if(useWebAudio) {
-        currentTime = ratio * dur;
-        if(isPlaying) {
-          pauseWebAudioPlayback();
-          startWebAudioPlayback();
-        } else {
-          drawWaveform(ctx, ampData, ratio, width, height);
-          timeIndicator.textContent = `${formatTime(currentTime)} / ${formatTime(dur)}`;
-        }
-      } else if(audioElement) {
+      const dur = audioElement ? audioElement.duration || duration : duration;
+      if(audioElement) {
         audioElement.currentTime = ratio * dur;
         drawWaveform(ctx, ampData, ratio, width, height);
       }
     });
-
     /* Hover effect: timestamp & peak highlight */
     waveformCanvas.addEventListener('mousemove', e => {
       mouseHovering = true;
@@ -711,18 +547,16 @@
       const x = e.clientX - rect.left;
       const ratio = x / rect.width;
       hoverIndex = Math.min(Math.max(Math.floor(ratio * ampData.length), 0), ampData.length - 1);
-      const dur = useWebAudio ? duration : (audioElement ? audioElement.duration || data[5] : data[5]);
+      const dur = audioElement ? audioElement.duration || duration : duration;
       timeIndicator.textContent = `${formatTime(ratio * dur)} / ${formatTime(dur)}`;
-
-      const prog = useWebAudio ? (currentTime / dur) : (audioElement ? audioElement.currentTime / dur : 0);
+      const prog = audioElement ? (audioElement.currentTime / dur) : 0;
       drawWaveform(ctx, ampData, prog, width, height, hoverIndex, true);
     });
-
     waveformCanvas.addEventListener('mouseleave', () => {
       mouseHovering = false;
       hoverIndex = -1;
-      const dur = useWebAudio ? duration : (audioElement ? audioElement.duration || data[5] : data[5]);
-      const curTime = useWebAudio ? currentTime : (audioElement ? audioElement.currentTime : 0);
+      const dur = audioElement ? audioElement.duration || duration : duration;
+      const curTime = audioElement ? audioElement.currentTime : 0;
       const prog = dur ? curTime / dur : 0;
       drawWaveform(ctx, ampData, prog, width, height);
       timeIndicator.textContent = `${formatTime(curTime)} / ${formatTime(dur)}`;
@@ -737,16 +571,12 @@
       ampData,
       width,
       height,
-      buffer,
-      sourceNode,
-      gainNode,
-      isWebAudio: useWebAudio,
-      currentTimeFn: () => useWebAudio ? currentTime : (audioElement ? audioElement.currentTime : 0),
-      playAudioFn: useWebAudio ? startWebAudioPlayback : () => audioElement.play(),
-      pauseAudioFn: useWebAudio ? pauseWebAudioPlayback : () => audioElement.pause(),
+      isWebAudio: false,
+      currentTimeFn: () => audioElement.currentTime,
+      playAudioFn: () => audioElement.play(),
+      pauseAudioFn: () => audioElement.pause()
     };
   }
-
   /** Update global footer controls */
   function updateFooter(audio, playBtn, idx) {
     if(audio || playBtn) {
@@ -767,8 +597,7 @@
       footerPlayBtn._linkedIndex = -1;
     }
   }
-  function updateFooterTime(_cur) {} // reserved
-
+  function updateFooterTime(_cur) {} // reserved, no implementation yet
   /* Global footer play/pause */
   footerPlayBtn.addEventListener('click', () => {
     const audio = footerPlayBtn._linkedAudio;
@@ -790,7 +619,6 @@
       footerPlayBtn.textContent = 'Play';
     }
   });
-
   /* Global volume update */
   footerVolumeInput.addEventListener('input', e => {
     const vol = parseFloat(e.target.value);
@@ -798,7 +626,6 @@
       if(audio) audio.volume = vol;
     });
   });
-
   /* Play next track for seamless playback */
   function playNextTrack(currentIndex) {
     let nextIdx = currentIndex + 1;
@@ -806,8 +633,7 @@
       updateFooter(null, null, -1);
       return;
     }
-    const {audio, btnPlay, isWebAudio, playAudioFn} = tracks[nextIdx];
-
+    const {audio, btnPlay} = tracks[nextIdx];
     // Pause all except next
     tracks.forEach(({audio: a, btnPlay: b}) => {
       if(a && a !== audio) {
@@ -815,19 +641,12 @@
         b.textContent = 'Play';
       }
     });
-
-    if(isWebAudio) {
-      // Use Web Audio API playback start via play button click
-      playAudioFn();
-    } else {
-      audio.currentTime = 0;
-      audio.play();
-      btnPlay.textContent = 'Pause';
-      playingIndex = nextIdx;
-      updateFooter(audio, btnPlay, nextIdx);
-    }
+    audio.currentTime = 0;
+    audio.play();
+    btnPlay.textContent = 'Pause';
+    playingIndex = nextIdx;
+    updateFooter(audio, btnPlay, nextIdx);
   }
-
   // Init UI and playback
   const playlistRoot = document.getElementById('playlist-container');
   musicData.forEach((trackData, i) => {
@@ -835,7 +654,6 @@
     tracks.push(trackObj);
     playlistRoot.appendChild(trackObj.container);
   });
-
   // Pause all on unload
   window.addEventListener('pagehide', () => {
     tracks.forEach(({audio}) => {
@@ -843,6 +661,5 @@
     });
   });
 </script>
-
 </body>
 </html>
