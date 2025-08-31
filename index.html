@@ -1,21 +1,848 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" >
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AudioTech</title>
-  <meta name="description" content="">
-  <meta name="author" content="">
-  <!-- <link rel="icon" href="favicon.ico"> -->
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Artist Profile Tracklist with Interactive Waveform</title>
+  <style>
+    /*
+      === Modern Browser CSS Reset (Eric Meyer v2.0 adapted) ===
+      Ensures consistent styling across browsers by neutralizing default styles.
+      Source: https://meyerweb.com/eric/tools/css/reset/
+    */
+    html, body, div, span, applet, object, iframe,
+    h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+    a, abbr, acronym, address, big, cite, code,
+    del, dfn, em, img, ins, kbd, q, s, samp,
+    small, strike, strong, sub, sup, tt, var,
+    b, u, i, center,
+    dl, dt, dd, ol, ul, li,
+    fieldset, form, label, legend,
+    table, caption, tbody, tfoot, thead, tr, th, td,
+    article, aside, canvas, details, embed,
+    figure, figcaption, footer, header, hgroup,
+    menu, nav, output, ruby, section, summary,
+    time, mark, audio, video {
+      margin: 0;
+      padding: 0;
+      border: 0;
+      font-size: 100%;
+      font: inherit;
+      vertical-align: baseline;
+      outline: 0;
+    }
+    /* HTML5 display-role reset for older browsers */
+    article, aside, details, figcaption, figure,
+    footer, header, hgroup, menu, nav, section {
+      display: block;
+    }
+    body {
+      line-height: 1;
+      background: var(--background);
+      color: var(--text-color-bright);
+      font-family: Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    ol, ul {
+      list-style: none;
+    }
+    blockquote, q {
+      quotes: none;
+    }
+    blockquote:before, blockquote:after,
+    q:before, q:after {
+      content: '';
+      content: none;
+    }
+    table {
+      border-collapse: collapse;
+      border-spacing: 0;
+    }
+
+    /* Mobile-first default: content elements width 460px */
+    .content {
+      width: 460px;
+      margin: 0 auto 32px auto;
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    /* Playlist container is full width and uses flex column */
+    #playlist-container {
+      width: 100%;
+      box-sizing: border-box;
+      user-select: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 32px;
+      padding-bottom: 80px; /* for footer */
+    }
+
+    /* Track item is the .content wrapper for each */
+    .track-item.content {
+      display: flex;
+      flex-direction: column;
+      width: 460px;
+      box-sizing: border-box;
+    }
+
+    /* 1st container: cover art full width */
+    .track-cover-container {
+      width: 100%;
+      margin-bottom: 8px;
+    }
+    .track-cover-container img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      display: block;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    /* 2nd container: flex row for three subcontainers */
+    .track-info-container {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      box-sizing: border-box;
+      margin-bottom: 8px;
+    }
+    /* 1st subcontainer: play button no left margin/padding */
+    .play-btn-container {
+      flex: 0 0 auto;
+      margin: 0;
+      padding: 0;
+    }
+    .btn-play-pause {
+      background: var(--button-bg);
+      color: var(--button-color);
+      border: none;
+      border-radius: 4px;
+      padding: 6px 14px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1rem;
+      user-select: none;
+      white-space: nowrap;
+      min-width: 70px;
+    }
+    .btn-play-pause:hover {
+      background: var(--button-hover-bg);
+    }
+
+    /* 2nd subcontainer: artist and title stacked */
+    .artist-title-container {
+      flex: 1 1 auto;
+      margin-left: 8px;
+      margin-right: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      overflow: hidden;
+      min-width: 0;
+      user-select: none;
+    }
+    .track-artist {
+      font-weight: 600;
+      font-size: 19px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 2px;
+      color: var(--text-color-bright);
+    }
+    .track-title {
+      font-weight: 700;
+      font-size: 22px;
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text-color-bright);
+    }
+
+    /* 3rd subcontainer: genre/date top row, play-pos/duration bottom row */
+    .meta-info-container {
+      flex: 0 0 auto;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: flex-end;
+      user-select: none;
+    }
+    .genre-date-row,
+    .time-row {
+      display: flex;
+      gap: 12px;
+      white-space: nowrap;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-color);
+    }
+    .time-row {
+      font-family: monospace;
+      letter-spacing: 0.04em;
+      min-width: 138px;
+      justify-content: flex-end;
+    }
+
+    /* 3rd container: waveform full width */
+    .waveform-container {
+      width: 100%;
+      margin-bottom: 8px;
+      user-select: none;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    canvas.waveform-canvas {
+      width: 100%;
+      height: 110px;
+      display: block;
+      cursor: pointer;
+      border-radius: 8px;
+      background: transparent;
+    }
+
+    /* 4th container: toggle and content full width */
+    .tracklist-container {
+      width: 100%;
+      margin-top: 0;
+      user-select: none;
+    }
+    .btn-toggle-tracklist {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--button-color);
+      font-weight: bold;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      user-select: none;
+      width: 100%;
+      justify-content: center;
+      padding: 0;
+    }
+    .btn-toggle-tracklist::after {
+      content: '▼';
+      font-size: 0.6rem;
+      transition: transform 0.3s ease;
+    }
+    .btn-toggle-tracklist[aria-expanded="true"]::after {
+      transform: rotate(-180deg);
+    }
+    .tracklist-content {
+      display: none;
+      margin-top: 8px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      max-height: 150px;
+      overflow-y: auto;
+      color: var(--text-color);
+      width: 100%;
+    }
+    .tracklist-content.visible {
+      display: block;
+    }
+
+    /* THEME VARIABLES */
+    :root {
+      --button-bg: #383351;
+      --button-color: #fff;
+      --button-hover-bg: #4f4a85;
+      --text-color: #555;
+      --text-color-bright: #222;
+      --footer-bg: #eee;
+      --waveform-active: #383351;
+      --waveform-inactive: #bbb;
+      --waveform-hover: #fff100;
+      --background: #fff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --button-bg: #a3a3e3;
+        --button-color: #222;
+        --button-hover-bg: #8a8aea;
+        --text-color: #ccc;
+        --text-color-bright: #f0f0f0;
+        --footer-bg: #222;
+        --waveform-active: #a3a3e3;
+        --waveform-inactive: #444;
+        --waveform-hover: #ffff70;
+        --background: #121212;
+      }
+      body {
+        background: var(--background);
+      }
+    }
+
+    /* Footer containing new inner container */
+    #footer-controls {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background-color: var(--footer-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      user-select: none;
+      z-index: 1000;
+      padding: 0 20px;
+    }
+    #footer-controls .footer-inner-container {
+      width: 460px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    #footer-controls .btn-play-pause {
+      padding: 6px 14px;
+      font-size: 1.1rem;
+      min-width: 80px;
+      cursor: pointer;
+      background: var(--button-bg);
+      border: none;
+      border-radius: 4px;
+      color: var(--button-color);
+      user-select: none;
+    }
+    #footer-controls .btn-play-pause:hover {
+      background: var(--button-hover-bg);
+    }
+    #footer-controls input[type=range] {
+      width: 120px;
+      cursor: pointer;
+      accent-color: var(--button-bg);
+      background: var(--button-bg);
+      height: 6px;
+      border-radius: 3px;
+    }
+  </style>
 </head>
 <body>
-	
-	<div id="main">
-		
-	</div>
 
-  <script src="scripts.js"></script>
+<div id="playlist-container" aria-label="Artist profile tracklist"></div>
+
+<div id="footer-controls" aria-label="Global audio controls">
+  <div class="footer-inner-container">
+    <button class="btn-play-pause" aria-label="Play/Pause global audio player">Play</button>
+    <input type="range" min="0" max="1" step="0.01" value="1" aria-label="Volume control" />
+  </div>
+</div>
+
+<script src="music.js"></script>
+
+<script>
+
+  /* ==== Global state ==== */
+  const tracks = [];
+  let playingIndex = -1;
+
+  // Footer controls references
+  const footerPlayBtn = document.querySelector('#footer-controls .btn-play-pause');
+  const footerVolumeInput = document.querySelector('#footer-controls input[type="range"]');
+
+  /** Time formatting for mm:ss */
+  function formatTime(s) {
+    if(!s) return '0:00';
+    const m = Math.floor(s / 60);
+    const ss = Math.floor(s % 60);
+    return `${m}:${ss < 10 ? '0' : ''}${ss}`;
+  }
+
+  /** Draw waveform canvas with 1px spacing, highlight hover */
+  function drawWaveform(ctx, ampData, progress, width, height, hoverIndex = -1, isHovering = false) {
+    ctx.clearRect(0, 0, width, height);
+    const midY = height / 2;
+    const total = ampData.length;
+    const barWidth = width / (total * 2);
+    const spaceWidth = barWidth;
+
+    for(let i = 0; i < total; i++) {
+      const amp = ampData[i];
+      const barHeight = amp * height;
+      const x = i * (barWidth + spaceWidth);
+
+      let fillStyle;
+      if(isHovering && i === hoverIndex) {
+        fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--waveform-hover');
+      } else if(i / total <= progress) {
+        fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--waveform-active');
+      } else {
+        fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--waveform-inactive');
+      }
+      ctx.fillStyle = fillStyle.trim();
+      ctx.fillRect(x, midY - barHeight / 2, barWidth, barHeight);
+    }
+  }
+
+  /**
+   * Create track item with 4 containers per new spec,
+   * and manage playback and interactions.
+   */
+  function createTrackElement(data, idx) {
+    const trackElem = document.createElement('div');
+    trackElem.className = 'track-item content';
+
+    // 1st container: cover art
+    const coverContainer = document.createElement('div');
+    coverContainer.className = 'track-cover-container';
+    const coverImg = document.createElement('img');
+    coverImg.alt = `${data[2]} cover art`;
+    coverImg.className = 'track-cover';
+    coverImg.src = `data:image/png;base64,${data[7]}`;
+    coverContainer.appendChild(coverImg);
+
+    // 2nd container: split into 3 subcontainers
+    const infoContainer = document.createElement('div');
+    infoContainer.className = 'track-info-container';
+
+    // 2.1 play button container (no left margin/padding)
+    const playBtnContainer = document.createElement('div');
+    playBtnContainer.className = 'play-btn-container';
+    const playPauseBtn = document.createElement('button');
+    playPauseBtn.className = 'btn-play-pause';
+    playPauseBtn.textContent = 'Play';
+    playPauseBtn.setAttribute('aria-label', `Play or Pause ${data[2]} by ${data[1]}`);
+    playBtnContainer.appendChild(playPauseBtn);
+
+    // 2.2 artist/title container stacked
+    const artistTitleContainer = document.createElement('div');
+    artistTitleContainer.className = 'artist-title-container';
+    const artistDiv = document.createElement('div');
+    artistDiv.className = 'track-artist';
+    artistDiv.textContent = data[1];
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'track-title';
+    titleDiv.textContent = data[2];
+    artistTitleContainer.appendChild(artistDiv);
+    artistTitleContainer.appendChild(titleDiv);
+
+    // 2.3 meta container genre/date first row, time second row
+    const metaContainer = document.createElement('div');
+    metaContainer.className = 'meta-info-container';
+
+    const genreDateRow = document.createElement('div');
+    genreDateRow.className = 'genre-date-row';
+    const genreDiv = document.createElement('div');
+    genreDiv.className = 'track-genre';
+    genreDiv.textContent = data[4];
+    const dateDiv = document.createElement('div');
+    dateDiv.className = 'track-date';
+    dateDiv.textContent = data[3];
+    genreDateRow.appendChild(genreDiv);
+    genreDateRow.appendChild(dateDiv);
+
+    const timeRow = document.createElement('div');
+    timeRow.className = 'time-row';
+    const timeIndicator = document.createElement('div');
+    timeIndicator.className = 'track-time';
+    timeIndicator.textContent = `0:00 / ${formatTime(data[5])}`;
+    timeRow.appendChild(timeIndicator);
+
+    metaContainer.appendChild(genreDateRow);
+    metaContainer.appendChild(timeRow);
+
+    infoContainer.appendChild(playBtnContainer);
+    infoContainer.appendChild(artistTitleContainer);
+    infoContainer.appendChild(metaContainer);
+
+    // 3rd container: waveform
+    const waveformContainer = document.createElement('div');
+    waveformContainer.className = 'waveform-container';
+    const waveformCanvas = document.createElement('canvas');
+    waveformCanvas.className = 'waveform-canvas';
+    waveformCanvas.width = 600;
+    waveformCanvas.height = 110;
+    waveformContainer.appendChild(waveformCanvas);
+
+    // 4th container: tracklist toggle & content
+    const tracklistContainer = document.createElement('div');
+    tracklistContainer.className = 'tracklist-container';
+    let toggleBtn = null;
+    let tracklistContent = null;
+
+    if(data[6].trim() !== '') {
+      toggleBtn = document.createElement('button');
+      toggleBtn.className = 'btn-toggle-tracklist';
+      toggleBtn.setAttribute('aria-expanded', 'false');
+      toggleBtn.textContent = 'Show Tracklist ▼';
+
+      tracklistContent = document.createElement('pre');
+      tracklistContent.className = 'tracklist-content';
+      tracklistContent.textContent = data[6];
+
+      toggleBtn.addEventListener('click', () => {
+        const expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
+        toggleBtn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+        tracklistContent.classList.toggle('visible');
+        toggleBtn.textContent = expanded ? 'Show Tracklist ▼' : 'Hide Tracklist ▲';
+      });
+      tracklistContainer.appendChild(toggleBtn);
+      tracklistContainer.appendChild(tracklistContent);
+    }
+
+    // Append all 4 containers to track item
+    trackElem.appendChild(coverContainer);
+    trackElem.appendChild(infoContainer);
+    trackElem.appendChild(waveformContainer);
+    if(tracklistContainer.childNodes.length) {
+      trackElem.appendChild(tracklistContainer);
+    }
+
+    // Initialize audio playback references and state
+    let audioElement = null;
+    let buffer = null;
+    let sourceNode = null;
+    let gainNode = null;
+
+    // Detect environment and Web Audio API support
+    const isLocalFile = location.protocol === 'file:';
+    const supportsWebAudio = ('AudioContext' in window) || ('webkitAudioContext' in window);
+    const useWebAudio = !isLocalFile && supportsWebAudio;
+
+    if(useWebAudio && !window._sharedAudioContext) {
+      window._sharedAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    const audioCtx = window._sharedAudioContext;
+
+    const ampData = JSON.parse(data[8]);
+    const ctx = waveformCanvas.getContext('2d');
+    const width = waveformCanvas.width;
+    const height = waveformCanvas.height;
+
+    // Playback state for Web Audio API manual tracking
+    let isPlaying = false,
+      playStartTimestamp = 0,
+      currentTime = 0,
+      pausedTime = 0,
+      progressUpdater = null,
+      mouseHovering = false,
+      hoverIndex = -1,
+      duration = data[5];
+
+    // Draw initial waveform (starting at 0)
+    drawWaveform(ctx, ampData, 0, width, height);
+
+    // Setup fallback audio for file:// or no Web Audio
+    if(!useWebAudio) {
+      audioElement = document.createElement('audio');
+      audioElement.src = `music/${data[0]}`;
+      audioElement.preload = 'metadata';
+      audioElement.style.display = 'none';
+      audioElement.controls = false;
+      trackElem.appendChild(audioElement);
+
+      audioElement.addEventListener('timeupdate', () => {
+        if(!mouseHovering) {
+          const current = audioElement.currentTime;
+          const dur = audioElement.duration || duration;
+          const prog = dur ? current / dur : 0;
+          drawWaveform(ctx, ampData, prog, width, height);
+          timeIndicator.textContent = `${formatTime(current)} / ${formatTime(dur)}`;
+          if(playingIndex === idx) updateFooterTime(current);
+        }
+      });
+
+      audioElement.addEventListener('ended', () => {
+        playPauseBtn.textContent = 'Play';
+        if(playingIndex === idx) {
+          playingIndex = -1;
+          updateFooter(null, null, -1);
+          playNextTrack(idx);
+        }
+      });
+    }
+
+    /* Web Audio API control functions */
+    async function startWebAudioPlayback() {
+      if(audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
+      stopWebAudioSource();
+
+      if(!buffer) {
+        try {
+          const response = await fetch(`music/${data[0]}`);
+          const arrayBuffer = await response.arrayBuffer();
+          buffer = await audioCtx.decodeAudioData(arrayBuffer);
+          duration = buffer.duration;
+          timeIndicator.textContent = `0:00 / ${formatTime(duration)}`;
+        } catch(e) {
+          console.error('Error loading audio buffer via Web Audio API:', e);
+          return;
+        }
+      }
+
+      sourceNode = audioCtx.createBufferSource();
+      gainNode = audioCtx.createGain();
+      sourceNode.buffer = buffer;
+      sourceNode.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      sourceNode.start(0, currentTime);
+
+      playingIndex = idx;
+      footerVolumeInput.value = gainNode.gain.value;
+
+      sourceNode.onended = () => {
+        playPauseBtn.textContent = 'Play';
+        currentTime = 0;
+        isPlaying = false;
+        if(playingIndex === idx) {
+          playingIndex = -1;
+          updateFooter(null, null, -1);
+          playNextTrack(idx);
+        }
+      };
+
+      playPauseBtn.textContent = 'Pause';
+      updateFooter(null, playPauseBtn, idx);
+      isPlaying = true;
+      startProgressUpdate();
+    }
+
+    function stopWebAudioSource() {
+      if(sourceNode) {
+        try { sourceNode.stop(); } catch {}
+        sourceNode.disconnect();
+        sourceNode = null;
+      }
+      isPlaying = false;
+      stopProgressUpdate();
+    }
+
+    function pauseWebAudioPlayback() {
+      if(isPlaying) {
+        stopWebAudioSource();
+        pausedTime = currentTime;
+        playPauseBtn.textContent = 'Play';
+        updateFooter(null, null, -1);
+      }
+    }
+
+    function startProgressUpdate() {
+      playStartTimestamp = performance.now() / 1000 - currentTime;
+      progressUpdater = setInterval(() => {
+        if(!mouseHovering) {
+          currentTime = (performance.now() / 1000) - playStartTimestamp;
+          if(currentTime > duration) currentTime = duration;
+          let prog = duration ? currentTime / duration : 0;
+          drawWaveform(ctx, ampData, prog, width, height);
+          timeIndicator.textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
+          if(playingIndex === idx) updateFooterTime(currentTime);
+        }
+      }, 50);
+    }
+    function stopProgressUpdate() {
+      if(progressUpdater) {
+        clearInterval(progressUpdater);
+        progressUpdater = null;
+      }
+    }
+
+    /* Play/Pause button logic */
+    playPauseBtn.addEventListener('click', () => {
+      if(useWebAudio) {
+        if(!isPlaying) {
+          if(audioCtx.state === 'suspended') audioCtx.resume().then(() => startWebAudioPlayback());
+          else startWebAudioPlayback();
+        } else {
+          pauseWebAudioPlayback();
+        }
+      } else {
+        if(audioElement.paused) {
+          tracks.forEach(({audio, btnPlay}, i) => {
+            if(i !== idx) {
+              if(audio) audio.pause();
+              btnPlay.textContent = 'Play';
+            }
+          });
+          audioElement.play();
+          playPauseBtn.textContent = 'Pause';
+          playingIndex = idx;
+          updateFooter(audioElement, playPauseBtn, idx);
+        } else {
+          audioElement.pause();
+          playPauseBtn.textContent = 'Play';
+          if(playingIndex === idx) playingIndex = -1;
+          updateFooter(null, null, -1);
+        }
+      }
+    });
+
+    /* Waveform click seek */
+    waveformCanvas.addEventListener('click', e => {
+      const rect = waveformCanvas.getBoundingClientRect();
+      const ratio = (e.clientX - rect.left) / rect.width;
+      const dur = useWebAudio ? duration : (audioElement ? audioElement.duration || data[5] : data[5]);
+
+      if(useWebAudio) {
+        currentTime = ratio * dur;
+        if(isPlaying) {
+          pauseWebAudioPlayback();
+          startWebAudioPlayback();
+        } else {
+          drawWaveform(ctx, ampData, ratio, width, height);
+          timeIndicator.textContent = `${formatTime(currentTime)} / ${formatTime(dur)}`;
+        }
+      } else if(audioElement) {
+        audioElement.currentTime = ratio * dur;
+        drawWaveform(ctx, ampData, ratio, width, height);
+      }
+    });
+
+    /* Hover effect: timestamp & peak highlight */
+    waveformCanvas.addEventListener('mousemove', e => {
+      mouseHovering = true;
+      const rect = waveformCanvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const ratio = x / rect.width;
+      hoverIndex = Math.min(Math.max(Math.floor(ratio * ampData.length), 0), ampData.length - 1);
+      const dur = useWebAudio ? duration : (audioElement ? audioElement.duration || data[5] : data[5]);
+      timeIndicator.textContent = `${formatTime(ratio * dur)} / ${formatTime(dur)}`;
+
+      const prog = useWebAudio ? (currentTime / dur) : (audioElement ? audioElement.currentTime / dur : 0);
+      drawWaveform(ctx, ampData, prog, width, height, hoverIndex, true);
+    });
+
+    waveformCanvas.addEventListener('mouseleave', () => {
+      mouseHovering = false;
+      hoverIndex = -1;
+      const dur = useWebAudio ? duration : (audioElement ? audioElement.duration || data[5] : data[5]);
+      const curTime = useWebAudio ? currentTime : (audioElement ? audioElement.currentTime : 0);
+      const prog = dur ? curTime / dur : 0;
+      drawWaveform(ctx, ampData, prog, width, height);
+      timeIndicator.textContent = `${formatTime(curTime)} / ${formatTime(dur)}`;
+    });
+
+    return {
+      container: trackElem,
+      audio: audioElement,
+      btnPlay: playPauseBtn,
+      timeDisplay: timeIndicator,
+      canvasCtx: ctx,
+      ampData,
+      width,
+      height,
+      buffer,
+      sourceNode,
+      gainNode,
+      isWebAudio: useWebAudio,
+      currentTimeFn: () => useWebAudio ? currentTime : (audioElement ? audioElement.currentTime : 0),
+      playAudioFn: useWebAudio ? startWebAudioPlayback : () => audioElement.play(),
+      pauseAudioFn: useWebAudio ? pauseWebAudioPlayback : () => audioElement.pause(),
+    };
+  }
+
+  /** Update global footer controls */
+  function updateFooter(audio, playBtn, idx) {
+    if(audio || playBtn) {
+      let paused = true;
+      if(audio) paused = audio.paused;
+      else if(playBtn) paused = playBtn.textContent === 'Play';
+      footerPlayBtn.textContent = paused ? 'Play' : 'Pause';
+      footerPlayBtn.disabled = false;
+      footerPlayBtn._linkedAudio = audio;
+      footerPlayBtn._linkedPlayBtn = playBtn;
+      footerPlayBtn._linkedIndex = idx;
+      if(audio) footerVolumeInput.value = audio.volume;
+    } else {
+      footerPlayBtn.textContent = 'Play';
+      footerPlayBtn.disabled = true;
+      footerPlayBtn._linkedAudio = null;
+      footerPlayBtn._linkedPlayBtn = null;
+      footerPlayBtn._linkedIndex = -1;
+    }
+  }
+  function updateFooterTime(_cur) {} // reserved
+
+  /* Global footer play/pause */
+  footerPlayBtn.addEventListener('click', () => {
+    const audio = footerPlayBtn._linkedAudio;
+    const playBtn = footerPlayBtn._linkedPlayBtn;
+    if(!audio) return;
+    if(audio.paused) {
+      tracks.forEach(({audio: a, btnPlay: b}) => {
+        if(a !== audio && a) {
+          a.pause();
+          b.textContent = 'Play';
+        }
+      });
+      audio.play();
+      playBtn.textContent = 'Pause';
+      footerPlayBtn.textContent = 'Pause';
+    } else {
+      audio.pause();
+      playBtn.textContent = 'Play';
+      footerPlayBtn.textContent = 'Play';
+    }
+  });
+
+  /* Global volume update */
+  footerVolumeInput.addEventListener('input', e => {
+    const vol = parseFloat(e.target.value);
+    tracks.forEach(({audio}) => {
+      if(audio) audio.volume = vol;
+    });
+  });
+
+  /* Play next track for seamless playback */
+  function playNextTrack(currentIndex) {
+    let nextIdx = currentIndex + 1;
+    if(nextIdx >= tracks.length) {
+      updateFooter(null, null, -1);
+      return;
+    }
+    const {audio, btnPlay, isWebAudio, playAudioFn} = tracks[nextIdx];
+
+    // Pause all except next
+    tracks.forEach(({audio: a, btnPlay: b}) => {
+      if(a && a !== audio) {
+        a.pause();
+        b.textContent = 'Play';
+      }
+    });
+
+    if(isWebAudio) {
+      // Use Web Audio API playback start via play button click
+      playAudioFn();
+    } else {
+      audio.currentTime = 0;
+      audio.play();
+      btnPlay.textContent = 'Pause';
+      playingIndex = nextIdx;
+      updateFooter(audio, btnPlay, nextIdx);
+    }
+  }
+
+  // Init UI and playback
+  const playlistRoot = document.getElementById('playlist-container');
+  musicData.forEach((trackData, i) => {
+    const trackObj = createTrackElement(trackData, i);
+    tracks.push(trackObj);
+    playlistRoot.appendChild(trackObj.container);
+  });
+
+  // Pause all on unload
+  window.addEventListener('pagehide', () => {
+    tracks.forEach(({audio}) => {
+      if(audio) audio.pause();
+    });
+  });
+</script>
+
 </body>
 </html>
