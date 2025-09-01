@@ -60,8 +60,8 @@ def extract_cover_base64(tags):
                 bottom = top + min_edge
                 img = img.crop((left, top, right, bottom))
 
-            # Resize to 512x512
-            img = img.resize((16, 16), Image.Resampling.LANCZOS)
+            # Resize to 460x460
+            img = img.resize((460, 460), Image.Resampling.LANCZOS)
 
             # Convert back to bytes (PNG format to preserve quality and transparency if any)
             buffered = BytesIO()
@@ -73,7 +73,7 @@ def extract_cover_base64(tags):
 
     return None
 
-def compute_amplitudeData(audio_path, target_length=50):
+def compute_amplitudeData(audio_path, target_length=200):
     aro = audioread.ffdec.FFmpegAudioFile(audio_path)
     y, sr = librosa.load(aro, sr=None, mono=True)
 
