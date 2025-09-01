@@ -1,27 +1,432 @@
-/* Define CSS variables for light and dark colors */
+/* ==========================================================================
+	CSS Reset (Eric Meyer v2.0 adapted)
+	----------------------------------------------------------------------------
+	Neutralizes default browser styles for consistency across browsers.
+	Source: [https://meyerweb.com/eric/tools/css/reset/](https://meyerweb.com/eric/tools/css/reset/)
+	========================================================================== */
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 100%;
+	font: inherit;
+	vertical-align: baseline;
+	outline: 0;
+}
+/* HTML5 display role reset for older browsers */
+article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section {
+	display: block;
+}
+body {
+	line-height: 1;
+	font-family: Arial, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	background: var(--background);
+	color: var(--text-color-bright);
+}
+ol, ul {
+	list-style: none;
+}
+blockquote, q {
+	quotes: none;
+}
+blockquote::before, blockquote::after,
+q::before, q::after {
+	content: '';
+	content: none;
+}
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+/* ==========================================================================
+	Theme Variables & Auto Dark Mode by System Preference
+	----------------------------------------------------------------------------
+	Define base variables; auto switch for light/dark mode via @media (prefers-color-scheme).
+	Benefits: cleaner code, easy theming, no JS needed for theme detection.
+	========================================================================== */
 :root {
-	--bg-color: #e0e0e0;
-	--text-color: #121212;
+	/* Buttons */
+	--btn-bg: #383351;
+	--btn-color: #fff;
+	--btn-hover-bg: #4f4a85;
+	/* Text colors */
+	--text-color-muted: #555;
+	--text-color-bright: #222;
+	/* Background */
+	--footer-bg: #eee;
+	--background: #fff;
+	/* Waveform colors */
+	--waveform-active: var(--btn-bg);
+	--waveform-inactive: var(--text-color-muted);
+	--waveform-hover: #fff100;
+	/* Spacing & sizing */
+	--content-width: 460px;
+	--btn-size: 38px;
+	--font-family-base: Arial, sans-serif;
+	/* Transitions */
+	--transition-default: 0.3s ease;
 }
 @media (prefers-color-scheme: dark) {
 	:root {
-	--bg-color: #121212;
-	--text-color: #e0e0e0;
+	--btn-bg: #a3a3e3;
+	--btn-color: #222;
+	--btn-hover-bg: #8a8aea;
+	--text-color-muted: #ccc;
+	--text-color-bright: #f0f0f0;
+	--footer-bg: #222;
+	--background: #121212;
+	--waveform-active: var(--btn-bg);
+	--waveform-inactive: var(--text-color-muted);
+	--waveform-hover: #5050d4;
 	}
 }
-
-body {
+/* ==========================================================================
+	Layout & Core Components
+	========================================================================== */
+.content {
+	width: var(--content-width);
+	margin: 0 auto 32px auto;
+	box-sizing: border-box;
+	user-select: none;
+	display: flex;
+	flex-direction: column;
+	justify-content: center; /* vertical centering */
+}
+#playlist-container {
+	width: 100%;
+	box-sizing: border-box;
+	user-select: none;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 32px;
+	padding-bottom: 80px; /* reserve space for footer */
+}
+.track-item.content {
+	display: flex;
+	flex-direction: column;
+	width: var(--content-width);
+	box-sizing: border-box;
+	justify-content: center;
+}
+.track-cover-container {
+	width: 100%;
+	margin-bottom: 8px;
+}
+.track-cover-container img {
+	width: 100%;
+	height: auto;
+	border-radius: 8px;
+	display: block;
+	user-select: none;
+	pointer-events: none;
+}
+.track-info-container {
+	width: 100%;
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	box-sizing: border-box;
+	margin-bottom: 8px;
+	position: relative;
+}
+.play-btn-container {
+	flex: 0 0 auto;
 	margin: 0;
 	padding: 0;
-	background-color: var(--bg-color);
-	color: var(--text-color);
-	font-family: Arial, sans-serif;
+}
+.btn-play-pause {
+	background: var(--btn-bg);
+	color: var(--btn-color);
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	user-select: none;
+	white-space: nowrap;
+	width: var(--btn-size);
+	height: var(--btn-size);
+	padding: 0;
+	margin: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: bold;
+	font-size: 1rem;
+	transition: background-color var(--transition-default);
+}
+.btn-play-pause:hover,
+.btn-play-pause:focus-visible {
+	background: var(--btn-hover-bg);
+	outline-offset: 2px;
+	outline: 2px solid var(--btn-hover-bg);
+}
+.artist-title-container {
+	flex: 1 1 auto;
+	margin: 0 8px;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-start;
+	overflow: hidden;
+	min-width: 0;
+	user-select: none;
+}
+.track-artist {
+	font-weight: 400;
+	font-size: 16px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	margin-bottom: 2px;
+	color: var(--text-color-muted);
+}
+.track-title {
+	font-weight: 700;
+	font-size: 18px;
+	line-height: 1.1;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	color: var(--text-color-bright);
+}
+.meta-info-container {
+	flex: 0 0 auto;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	align-items: flex-end;
+	user-select: none;
+	max-height: 100%;
+	box-sizing: border-box;
+}
+.genre-date-row {
+	display: flex;
+	gap: 12px;
+	font-weight: 300;
+	font-size: 0.9rem;
+	white-space: nowrap;
+	color: var(--text-color-muted);
+}
+.time-row {
+	font-family: monospace;
+	letter-spacing: 0.04em;
+	min-width: 138px;
+	justify-content: flex-end;
+	color: var(--text-color-muted);
+	font-weight: 300;
+	font-size: 0.9rem;
+	margin-top: auto;
+	display: flex;
+	gap: 6px;
+	white-space: nowrap;
+	align-items: center;
+}
+.time-row .separator {
+	user-select: none;
+}
+.waveform-container {
+	width: 100%;
+	margin-bottom: 8px;
+	user-select: none;
+	border-radius: 8px;
+	overflow: hidden;
+}
+canvas.waveform-canvas {
+	height: 110px;
+	display: block;
+	cursor: pointer;
+	border-radius: 8px;
+	background: transparent;
+}
+.tracklist-container {
+	width: 100%;
+	margin-top: 0;
+	user-select: none;
+}
+.btn-toggle-tracklist {
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	color: var(--text-color-muted);
+	font-weight: 300;
+	font-size: 0.9rem;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	user-select: none;
+	width: 100%;
+	justify-content: center;
+	padding: 0;
+	transition: transform var(--transition-default);
+}
+.btn-toggle-tracklist::after {
+	content: '▼';
+	font-size: 0.6rem;
+	transition: transform var(--transition-default);
+}
+.btn-toggle-tracklist[aria-expanded="true"]::after {
+	transform: rotate(-180deg);
+}
+.tracklist-content {
+	display: none;
+	margin-top: 8px;
+	font-family: monospace;
+	white-space: pre-wrap;
+	max-height: 150px;
+	overflow-y: auto;
+	color: var(--text-color-muted);
+	width: 100%;
+}
+.tracklist-content.visible {
+	display: block;
+}
+/* ==========================================================================
+	Footer Controls
+	========================================================================== */
+#footer-controls {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: 60px;
+	background-color: var(--footer-bg);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	user-select: none;
+	z-index: 1000;
+	padding: 0 20px;
+}
+#footer-controls .footer-inner-container {
+	width: var(--content-width);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+#footer-controls .btn-play-pause, #footer-controls .btn-prev, #footer-controls .btn-next {
+	padding: 0;
+	margin-right: 10px;
+	font-size: 1.1rem;
+	min-width: var(--btn-size);
+	cursor: pointer;
+	background: var(--btn-bg);
+	border: none;
+	border-radius: 4px;
+	color: var(--btn-color);
+	user-select: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: var(--btn-size);
+	height: var(--btn-size);
+	transition: background-color var(--transition-default);
 }
 
-#main {
-	max-width: 1280px;
-	margin: 0px auto;
-	padding: 0px 20px;
-	text-align: center;
-	border: 1px solid #369;
+#footer-controls .btn-play-pause:hover, #footer-controls .btn-prev:hover, #footer-controls .btn-next:hover,
+#footer-controls .btn-play-pause:focus-visible, #footer-controls .btn-prev:focus-visible, #footer-controls .btn-next:focus-visible {
+	background: var(--btn-hover-bg);
+	outline-offset: 2px;
+	outline: 2px solid var(--btn-hover-bg);
+}
+
+/* Volume controls styling */
+#footer-controls .volume-controls {
+	margin-left: 20px;
+	display: flex;
+	align-items: center;
+}
+
+#footer-controls .btn-mute {
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	width: var(--btn-size);
+	height: var(--btn-size);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: color var(--transition-default);
+}
+
+#footer-controls .volume-percent {
+	font-size: 0.9rem;
+	white-space: nowrap;
+	min-width: 45px;
+	text-align: right;
+	color: var(--text-color-muted);
+}
+#footer-controls .btn-play-pause:hover,
+#footer-controls .btn-play-pause:focus-visible {
+	background: var(--btn-hover-bg);
+	outline-offset: 2px;
+	outline: 2px solid var(--btn-hover-bg);
+}
+#footer-controls input[type=range] {
+	width: 120px;
+	cursor: pointer;
+	appearance: none;
+	-webkit-appearance: none;
+	background-color: var(--background);
+	height: 20px;
+	border-radius: 5px;
+	position: relative;
+	overflow: hidden;
+	--vol-percent: 100%;
+	transition: background var(--transition-default);
+}
+#footer-controls input[type=range]::-webkit-slider-runnable-track {
+	height: 20px;
+	background: linear-gradient(to right,
+	var(--btn-bg) 0%, var(--btn-bg) var(--vol-percent),
+	var(--background) var(--vol-percent), var(--background) 100%);
+	border-radius: 5px;
+}
+#footer-controls input[type=range]::-moz-range-track {
+	height: 20px;
+	background: linear-gradient(to right,
+	var(--btn-bg) 0%, var(--btn-bg) var(--vol-percent),
+	var(--background) var(--vol-percent), var(--background) 100%);
+	border-radius: 5px;
+	border: none;
+}
+/* Hide slider thumb/knob */
+#footer-controls input[type=range]::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 0;
+	height: 0;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+}
+#footer-controls input[type=range]::-moz-range-thumb {
+	width: 0;
+	height: 0;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+}
+/* SVG icon sizing */
+svg.play-icon, svg.pause-icon, svg.prev-icon, svg.next-icon, svg.mute-icon, svg.unmute-icon {
+	width: 20px;
+	height: 20px;
+	display: block;
+	fill: currentColor;
 }
