@@ -1,15 +1,16 @@
 <!DOCTYPE html>
-<html lang="en" >
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tracklist with Interactive Waveform Audio Player</title>
   <style>
-    /*
-      === Modern Browser CSS Reset (Eric Meyer v2.0 adapted) ===
-      Ensures consistent styling across browsers by neutralizing default styles.
-      Source: [https://meyerweb.com/eric/tools/css/reset/](https://meyerweb.com/eric/tools/css/reset/)
-    */
+    /* ==========================================================================
+       CSS Reset (Eric Meyer v2.0 adapted)
+       ----------------------------------------------------------------------------
+       Neutralizes default browser styles for consistency across browsers.
+       Source: https://meyerweb.com/eric/tools/css/reset/
+    ========================================================================== */
     html, body, div, span, applet, object, iframe,
     h1, h2, h3, h4, h5, h6, p, blockquote, pre,
     a, abbr, acronym, address, big, cite, code,
@@ -31,18 +32,18 @@
       vertical-align: baseline;
       outline: 0;
     }
-    /* HTML5 display-role reset for older browsers */
+    /* HTML5 display role reset for older browsers */
     article, aside, details, figcaption, figure,
     footer, header, hgroup, menu, nav, section {
       display: block;
     }
     body {
       line-height: 1;
-      background: var(--background);
-      color: var(--text-color-bright);
       font-family: Arial, sans-serif;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      background: var(--background);
+      color: var(--text-color-bright);
     }
     ol, ul {
       list-style: none;
@@ -50,8 +51,8 @@
     blockquote, q {
       quotes: none;
     }
-    blockquote:before, blockquote:after,
-    q:before, q:after {
+    blockquote::before, blockquote::after,
+    q::before, q::after {
       content: '';
       content: none;
     }
@@ -59,17 +60,72 @@
       border-collapse: collapse;
       border-spacing: 0;
     }
-    /* Mobile-first default: content elements width 460px */
+
+    /* ==========================================================================
+       Theme Variables & Auto Dark Mode by System Preference
+       ----------------------------------------------------------------------------
+       Define base variables; auto switch for light/dark mode via @media (prefers-color-scheme).
+       Benefits: cleaner code, easy theming, no JS needed for theme detection.
+    ========================================================================== */
+    :root {
+      /* Buttons */
+      --btn-bg: #383351;
+      --btn-color: #fff;
+      --btn-hover-bg: #4f4a85;
+
+      /* Text colors */
+      --text-color-muted: #555;
+      --text-color-bright: #222;
+
+      /* Background */
+      --footer-bg: #eee;
+      --background: #fff;
+
+      /* Waveform colors */
+      --waveform-active: var(--btn-bg);
+      --waveform-inactive: var(--text-color-muted);
+      --waveform-hover: #fff100;
+
+      /* Spacing & sizing */
+      --content-width: 460px;
+      --btn-size: 38px;
+      --font-family-base: Arial, sans-serif;
+
+      /* Transitions */
+      --transition-default: 0.3s ease;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --btn-bg: #a3a3e3;
+        --btn-color: #222;
+        --btn-hover-bg: #8a8aea;
+
+        --text-color-muted: #ccc;
+        --text-color-bright: #f0f0f0;
+
+        --footer-bg: #222;
+        --background: #121212;
+
+        --waveform-active: var(--btn-bg);
+        --waveform-inactive: var(--text-color-muted);
+        --waveform-hover: #ffff70;
+      }
+    }
+
+    /* ==========================================================================
+       Layout & Core Components
+    ========================================================================== */
     .content {
-      width: 460px;
+      width: var(--content-width);
       margin: 0 auto 32px auto;
       box-sizing: border-box;
       user-select: none;
       display: flex;
       flex-direction: column;
-      justify-content: center; /* vertically center the content */
+      justify-content: center; /* vertical centering */
     }
-    /* Playlist container is full width and uses flex column */
+
     #playlist-container {
       width: 100%;
       box-sizing: border-box;
@@ -78,17 +134,17 @@
       flex-direction: column;
       align-items: center;
       gap: 32px;
-      padding-bottom: 80px; /* for footer */
+      padding-bottom: 80px; /* reserve space for footer */
     }
-    /* Track item is the .content wrapper for each */
+
     .track-item.content {
       display: flex;
       flex-direction: column;
-      width: 460px;
+      width: var(--content-width);
       box-sizing: border-box;
-      justify-content: center; /* vertically center track item */
+      justify-content: center;
     }
-    /* 1st container: cover art full width */
+
     .track-cover-container {
       width: 100%;
       margin-bottom: 8px;
@@ -101,7 +157,7 @@
       user-select: none;
       pointer-events: none;
     }
-    /* 2nd container: flex row for three subcontainers */
+
     .track-info-container {
       width: 100%;
       display: flex;
@@ -111,22 +167,23 @@
       margin-bottom: 8px;
       position: relative;
     }
-    /* 1st subcontainer: play button no left margin/padding */
+
     .play-btn-container {
       flex: 0 0 auto;
       margin: 0;
       padding: 0;
     }
+
     .btn-play-pause {
-      background: var(--button-bg);
-      color: var(--button-color);
+      background: var(--btn-bg);
+      color: var(--btn-color);
       border: none;
       border-radius: 4px;
       cursor: pointer;
       user-select: none;
       white-space: nowrap;
-      width: 38px;
-      height: 38px;
+      width: var(--btn-size);
+      height: var(--btn-size);
       padding: 0;
       margin: 0;
       display: flex;
@@ -134,15 +191,18 @@
       justify-content: center;
       font-weight: bold;
       font-size: 1rem;
+      transition: background-color var(--transition-default);
     }
-    .btn-play-pause:hover {
-      background: var(--button-hover-bg);
+    .btn-play-pause:hover,
+    .btn-play-pause:focus-visible {
+      background: var(--btn-hover-bg);
+      outline-offset: 2px;
+      outline: 2px solid var(--btn-hover-bg);
     }
-    /* 2nd subcontainer: artist and title stacked */
+
     .artist-title-container {
       flex: 1 1 auto;
-      margin-left: 8px;
-      margin-right: 8px;
+      margin: 0 8px;
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
@@ -157,7 +217,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
       margin-bottom: 2px;
-      color: var(--text-color);
+      color: var(--text-color-muted);
     }
     .track-title {
       font-weight: 700;
@@ -168,7 +228,7 @@
       text-overflow: ellipsis;
       color: var(--text-color-bright);
     }
-    /* 3rd subcontainer: genre/date top row, play-pos/duration bottom row */
+
     .meta-info-container {
       flex: 0 0 auto;
       margin: 0;
@@ -181,20 +241,22 @@
       max-height: 100%;
       box-sizing: border-box;
     }
+
     .genre-date-row {
       display: flex;
       gap: 12px;
-      white-space: nowrap;
       font-weight: 300;
       font-size: 0.9rem;
-      color: var(--text-color);
+      white-space: nowrap;
+      color: var(--text-color-muted);
     }
+
     .time-row {
       font-family: monospace;
       letter-spacing: 0.04em;
       min-width: 138px;
       justify-content: flex-end;
-      color: var(--text-color);
+      color: var(--text-color-muted);
       font-weight: 300;
       font-size: 0.9rem;
       margin-top: auto;
@@ -203,10 +265,11 @@
       white-space: nowrap;
       align-items: center;
     }
+
     .time-row .separator {
       user-select: none;
     }
-    /* 3rd container: waveform full width */
+
     .waveform-container {
       width: 100%;
       margin-bottom: 8px;
@@ -214,6 +277,7 @@
       border-radius: 8px;
       overflow: hidden;
     }
+
     canvas.waveform-canvas {
       width: 100%;
       height: 110px;
@@ -222,17 +286,18 @@
       border-radius: 8px;
       background: transparent;
     }
-    /* 4th container: toggle and content full width */
+
     .tracklist-container {
       width: 100%;
       margin-top: 0;
       user-select: none;
     }
+
     .btn-toggle-tracklist {
       background: transparent;
       border: none;
       cursor: pointer;
-      color: var(--text-color);
+      color: var(--text-color-muted);
       font-weight: 300;
       font-size: 0.9rem;
       display: flex;
@@ -242,15 +307,18 @@
       width: 100%;
       justify-content: center;
       padding: 0;
+      transition: transform var(--transition-default);
     }
+
     .btn-toggle-tracklist::after {
       content: '▼';
       font-size: 0.6rem;
-      transition: transform 0.3s ease;
+      transition: transform var(--transition-default);
     }
     .btn-toggle-tracklist[aria-expanded="true"]::after {
       transform: rotate(-180deg);
     }
+
     .tracklist-content {
       display: none;
       margin-top: 8px;
@@ -258,43 +326,16 @@
       white-space: pre-wrap;
       max-height: 150px;
       overflow-y: auto;
-      color: var(--text-color);
+      color: var(--text-color-muted);
       width: 100%;
     }
     .tracklist-content.visible {
       display: block;
     }
-    /* THEME VARIABLES */
-    :root {
-      --button-bg: #383351;
-      --button-color: #fff;
-      --button-hover-bg: #4f4a85;
-      --text-color: #555;
-      --text-color-bright: #222;
-      --footer-bg: #eee;
-      --waveform-active: #383351;
-      --waveform-inactive: var(--text-color);
-      --waveform-hover: #fff100;
-      --background: #fff;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --button-bg: #a3a3e3;
-        --button-color: #222;
-        --button-hover-bg: #8a8aea;
-        --text-color: #ccc;
-        --text-color-bright: #f0f0f0;
-        --footer-bg: #222;
-        --waveform-active: #a3a3e3;
-        --waveform-inactive: var(--text-color);
-        --waveform-hover: #ffff70;
-        --background: #121212;
-      }
-      body {
-        background: var(--background);
-      }
-    }
-    /* Footer containing new inner container */
+
+    /* ==========================================================================
+       Footer Controls
+    ========================================================================== */
     #footer-controls {
       position: fixed;
       bottom: 0;
@@ -311,7 +352,7 @@
       padding: 0 20px;
     }
     #footer-controls .footer-inner-container {
-      width: 460px;
+      width: var(--content-width);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -320,23 +361,28 @@
     #footer-controls .btn-play-pause {
       padding: 0;
       font-size: 1.1rem;
-      min-width: 38px;
+      min-width: var(--btn-size);
       cursor: pointer;
-      background: var(--button-bg);
+      background: var(--btn-bg);
       border: none;
       border-radius: 4px;
-      color: var(--button-color);
+      color: var(--btn-color);
       user-select: none;
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 38px;
-      height: 38px;
+      width: var(--btn-size);
+      height: var(--btn-size);
+      transition: background-color var(--transition-default);
     }
-    #footer-controls .btn-play-pause:hover {
-      background: var(--button-hover-bg);
+
+    #footer-controls .btn-play-pause:hover,
+    #footer-controls .btn-play-pause:focus-visible {
+      background: var(--btn-hover-bg);
+      outline-offset: 2px;
+      outline: 2px solid var(--btn-hover-bg);
     }
-    /* Volume control with updated colors and height */
+
     #footer-controls input[type=range] {
       width: 120px;
       cursor: pointer;
@@ -348,25 +394,29 @@
       position: relative;
       overflow: hidden;
       --vol-percent: 100%;
+      transition: background var(--transition-default);
     }
     #footer-controls input[type=range]::-webkit-slider-runnable-track {
       height: 20px;
-      background: linear-gradient(to right, var(--button-bg) 0%, var(--button-bg) var(--vol-percent), var(--background) var(--vol-percent), var(--background) 100%);
+      background: linear-gradient(to right,
+        var(--btn-bg) 0%, var(--btn-bg) var(--vol-percent),
+        var(--background) var(--vol-percent), var(--background) 100%);
       border-radius: 5px;
     }
     #footer-controls input[type=range]::-moz-range-track {
       height: 20px;
-      background: linear-gradient(to right, var(--button-bg) 0%, var(--button-bg) var(--vol-percent), var(--background) var(--vol-percent), var(--background) 100%);
+      background: linear-gradient(to right,
+        var(--btn-bg) 0%, var(--btn-bg) var(--vol-percent),
+        var(--background) var(--vol-percent), var(--background) 100%);
       border-radius: 5px;
       border: none;
     }
-    /* Hide the thumb/knob */
+    /* Hide slider thumb/knob */
     #footer-controls input[type=range]::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
       width: 0;
       height: 0;
-      margin-top: 0;
       border: none;
       background: transparent;
       cursor: pointer;
@@ -378,72 +428,138 @@
       background: transparent;
       cursor: pointer;
     }
+
+    /* SVG icon sizing */
     svg.play-icon, svg.pause-icon {
       width: 20px;
       height: 20px;
-      fill: currentColor;
       display: block;
+      fill: currentColor;
     }
   </style>
 </head>
 <body>
-<div id="playlist-container" aria-label="Artist profile tracklist"></div>
-<div id="footer-controls" aria-label="Global audio controls">
-  <div class="footer-inner-container">
-    <button class="btn-play-pause" aria-label="Play/Pause global audio player" title="Play/Pause global audio player"></button>
-    <input type="range" min="0" max="1" step="0.01" value="1" aria-label="Volume control" />
+  <div id="playlist-container" aria-label="Tracklist"></div>
+  <div id="footer-controls" aria-label="Global audio controls">
+    <div class="footer-inner-container">
+      <button class="btn-play-pause" aria-label="Play/Pause global audio player" title="Play/Pause global audio player"></button>
+      <input type="range" min="0" max="1" step="0.01" value="1" aria-label="Volume control" />
+    </div>
   </div>
-</div>
-<script src="music.js"></script>
 <script>
-  // SVG icons for play and pause
+  /* ========= Data Setup ========= */
+  const musicData = [
+    [
+      "2025.08.10 - Jobo - Sunday.m4a",
+      "Jobo",
+      "Sunday",
+      "2025.08.10",
+      "Hip-Hop",
+      2060,
+      "01. DJ Solo - Soul Assassins Classic & Exclusive - 13 - Chronic Break - [Soul Assassins None] (2006)\n02. Cypress Hill - Latin Lingo - B1 - Stoned Is the Way of the Walk (LP Version) - [Ruffhouse 44.74478] (1992)\n03. Cypress Hill - Illusions - 1.04 - Illusions (Trumpet Instrumental) - [Ruffhouse XPR 2282] (1995)\n04. Call O' Da Wild - Sometimes the Neighborhood / Clouds of Smoke - B1 - Clouds of Smoke (Vocal) - [East Side BT195] (1995)\n05. Dredknotz - Causin’ a Menace / Tha Anthem - B2 - Tha Anthem (Remix Clean Version) - [Elektra ED 5689] (1994)\n06. Red Hot Lover Tone ft. Notorious B.I.G., Organized Konfusion & M.O.P. - 4 My Peeps (Remix Vocal - Dirty) - [Select PRCD 35] (1995)\n07. The Notorious B.I.G. - Party and Bullshit (Remix) - A1 - Party and Bullshit (Lord's Dirty) - [Uptown UPT8P 2753] (1993)\n08. Leaders of the New School - Spontaneous (13 MC's Deep) - (1993)",
+      "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAACmElEQVR4nAXBS4tcRRQA4HOqTlX1ffSd7puedtIjxIF0ZDABE0GDIkFxERBxI+LWrT/AX2LWWQSXQchOCFm5CRIMDIkJCeI4M+mensz07cfUfdStOn4f1r9f0zsKWLCTp7/sEfbw5tX4+o4gUx2twj8TYcr487x6PnUP/g6zAqffafVBnn42lFu9epbr0buUxuAUgADpmGsQrd1/4+88zPz6lEh0uFGPp4t7E8/jeHyJFEGtWCgQElqNjsBW8XbP3/7oxEL87TVSOkFp4h+/1F3J5yVQF8CCqwEZAIF6SCNwh9knA5vdjK4PyH8zbm3aH8e8sqgywAq4BF9Aeway5+oTFEbKWAInu7n9a0LJhyNUMSxPkJK2ObCrWVsv4tiYKLfzlwGS4F1kWp2976w6vf9CFI/2EUrmVbP8Y3XyJ3NLKogwAW6UYpYgTMS0BQEprs1WQhghiBKAQe1E3ar1jTYXtb7Cwel0xNUMBWqdgpsIwWo3JZEiBA/ste6BvMTsUeYAJcKSvTbpDQBm/x8iYrD9L3LSF0twAVCDSFl0QRC4w7J4GsBEHYOdywwGXAFyWU6b4sExVUUT5RY9QHiLagCh8vWZird90N4XvH4sKQtlgf1s9WSBT6ZU/Po2/bmrtHbrV55fA3DwpmzOQ+A0jQmsnR8l3c3mrHXPz81A4JtbEL7qbX8/DIvlfDGV0vSGHwfuMEspG64mEOYBRNtckCr36zWZ3cRn2fx42R+KC2rAvq2Xe63vMHPcqYUh58Tsrk2vDja+3qC1oI2fxjI3x78dHszONm8bE0UmDtKf+iAdkD2E8r6Ljs5d2A+33kEvSKL38xU/m9NeNX0JyQ+agdqD3E1q8163/+lmO9rHpYXpqvl33rky/B/+b1nmdaIQPgAAAABJRU5ErkJggg==",
+      "[0.9956806121189683, 0.9934437862520055, 0.9884610638035296, 0.9914383561643836, 0.9785110452918672, 0.9895563371590769, 0.9741145254843885, 0.9726798716524744, 0.988630754041713, 0.9880599777860052, 0.9933512279402691, 0.9849129951869678, 0.9809792669381711, 0.975950265333827, 0.8227045538689375, 0.8119369369369369, 0.8763729482907565, 0.8435610267802048, 0.95379797605825, 0.8174904356411206, 0.7710415895347402, 0.7501234110823152, 0.7691287177588547, 0.981596322349747, 1.0, 0.9837405899049735, 0.6291034184869801, 0.6411514253980007, 0.8462914969764285, 0.972047389855609, 0.9104652597803283, 0.9575157349129952, 0.9819665555966925, 0.9413951622855733, 0.8605300505985437, 0.915401703072936, 0.8176446994940145, 0.7703628285820067, 0.7635289398988029, 0.8650345551030483, 0.7747593483894853, 0.9118382080710847, 0.9867641614216957, 0.7487967419474268, 0.753980007404665, 0.8160557818092065, 0.7224021967172652, 0.7956158213007528, 0.9569758114278663, 0.552465136369246]",
+      "16766ca355943210e6f398fd4874a74f525933300a73db9e5220ba991acce7fa"
+    ],
+    [
+      "2025.08.08 - Jobo - Rumskugel.m4a",
+      "Jobo",
+      "Rumskugel",
+      "2025.08.08",
+      "Bass, Dub-Step",
+      2257,
+      "",
+      "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAACv0lEQVR4nAXBy27TWAAAUN/re/24fttJnHchUDQZ1IqqoCIhsUDqkhVfwAfwUXwAe6TZTTdIMxJUQF+ZaeuS1CWxQxzbuX6bc8DfH//6cXX26cP7bVMEvMwinNdsxYu50siKYubOBoOh3R0apiHI+un5Cfrv5Mv8+GivZ0QxhckaCIQpoczERZVyWhNwdb9t33+8H0eeapp/jsfg3eGL6dlXXVX3R/bZjX//nm0r+Pp2JcgEEQ3zEhaRMX5aA5ZBGMkm2Bdgt2VWZbU3tKZBYnEgTMtRX2+3zRrywOzQ6UUpNokkJFE0PHwDnrQsHZRpno9UwW6oo62O64WXjku4um2oVkOTJIkzmiouPX+p9keQEKln6x1VHPb0yTycTBxDwi93B6au3Ib53HEWFEDATSfnKuFyfwF3LXwwkHmBS9P61d69z7P10fH/rreWQNXmIWXl8Od0evq1RpgmWV4WMPJ/OdNlSwRFknz89zKrGIRxlJXXcfXZ8Q0BMkUZ07DVMvOigkWMHG+DBd7EpaSIHUzwMjBw1TaIhrlv1x7Nc7OhAZa782lFY55j4c4fXaLIdttIk6TftMY6khVxkVT5fP5823KiKgxCu6GUDAw3OTRtZAgQIBRlxfFNvAPvfibFOqQPuuwqKYSqtCTl6MpzVpOtblPikHuzhE5QpsmGAObZQ11CcZDk16vNycxV5BppBoTAUkVFk1YRzapcJxUU+qPv0/WVu7y4Cy/9mvD8Tk9iOf7TxaosssUmB1nBZjQO1khtmdtPYEizB88OEpbzVpusqhuEmcwpZtierbtR5gVRECetwdDaGnWfHj56/RbRPL39VQ93D1J8ahHB924hUypE6LZMRZalRTBzF3Ng7R6+VBvG5dk/KMkozdMv5+tup59hJGDcE7T2+JHUfxjMvSi+6eyNeE3ZrH3NtkrA/QYbLl34UDP1qwAAAABJRU5ErkJggg==",
+      "[0.6457995735607676, 0.6796588486140724, 0.6674626865671642, 0.7646908315565032, 0.7482985074626866, 0.6813475479744137, 0.6895181236673774, 0.6920767590618336, 0.630362473347548, 0.5033518123667378, 0.5343624733475479, 0.8160682302771854, 0.6257057569296375, 0.7574072494669509, 0.7301663113006397, 0.8186098081023454, 0.7974413646055437, 1.0, 0.8892622601279317, 0.7511300639658849, 0.8189850746268657, 0.7036588486140725, 0.539769722814499, 0.4458678038379531, 0.6937313432835821, 0.5106524520255864, 0.7861492537313433, 0.8399829424307036, 0.834456289978678, 0.9075309168443497, 0.6448955223880597, 0.7031982942430703, 0.6406652452025586, 0.8549765458422175, 0.42695095948827294, 0.7776034115138593, 0.7229339019189766, 0.6190874200426439, 0.7388656716417911, 0.8963752665245203, 0.7170490405117271, 0.5483496801705757, 0.43728784648187635, 0.6836503198294243, 0.6597014925373135, 0.541543710021322, 0.6548571428571428, 0.6040085287846482, 0.5853304904051173, 0.3951727078891258]",
+      "15c91d58d2ef934c0a545f8a6d41b92c3e3dc7b7c4823f20b1e07063f22f1daf"
+    ],
+    [
+      "2025.07.26 - Jobo - Neulich im Berghain.m4a",
+      "Jobo",
+      "Neulich im Berghain",
+      "2025.07.26",
+      "Techno",
+      1605,
+      "01. UR - The Final Frontier - 03 - Base Camp Alpha 808 - [Underground Resistance UR003] (1990)\n02. UR - The Final Frontier - 01 - The Final Frontier - [Underground Resistance UR003] (1990)\n03. Max Watts - Immortal Funk EP - A2 - Karma - [Limited Network LN008] (2023)\n04. Nomadico - The Code Switcha - C2 - Machine Learning for Homeboy - [Yaxteq YXTQ 004] (2018)\n05. Damon Wild - Avion Return Pt. 3 (EP) - 01 - Avion (A Paul Remix) - [Synewave SW100.2] (2011)\n06. Alex Bau - Repaints 5.5 (EP) - 06 - Full Method Jacket (Weston Prince Repaint) - [Credo CREDO15] (2010)\n07. Planetary Assault Systems - GT (Remixes) (EP) - B1 - GT (Function & Jerome Sydenham Remix) - [Mote-Evolver MOTE018] (2010)\n08. DJ Bone - Subject Detroit 30th Anniversary Remixes, Vol.1 - 1.06 - No Sleep (Jack Fresia Remix) - [Subject Detroit] (2025)\n09. UR - Interstellar Fugitives 2: Destruction of Order - 1.10 - DJ S2 - Post Emancipation Psychosis - [UWE UWE198] (2006)",
+      "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAACfUlEQVR4nGXSPW/kVBSA4XPuudfjj3E8no9sVizLpkGkoAE6GlokCvgp/AJKKgokKhpETYXYApSWggohoZUAsdkkk8xmkplxxuOxfe17z0Gpefu3e/D3P15MxvlknCVJDP9LBASkExZA5/2PP/2gT09/9c5prfIsncwmh4fT6WScjdIgDMZZhggIGCIBwMv5q+++/1p3bWOritnXRXF1fqGNAUAGeRjG008+/XiY5+fzq+FAvvjy88vLuSaQgdZgYgYyCArEs6urqm+trew333613FwsFvPWrpeLe/GBBoVKo6CAkChQROJUFA8RVRpHp7/98ur6nyiM9pXtGk0GtFboQBB6x5qIRBDAAYE4BKA4GZFK2obril3rgFCjiCHT9Y3fL604poM0YgfG2X3jivu7+7vrElgGgQKRNAh0ud2EaK5u5npx1jgzO3lrvbUMclD+9fxf2uvNyXsRdeadcPZ33b7/7FhvVq+7bbspV83ybsuhmybdbpfy7rY4e/Ey/OCj/MPPRsFt+ufzsjfdorC67dzl1XnDHYxyZrhcrp7OwtcwOL99dvRUP36UVteBXa/nF3fJk+hsdaOSI3P07jh8ww7i/exJFmRBsduk2e7kWJI4KBouVuV9p4o04Ly3cqtv6p8P8jenIZS7lVGCMAgzV9Zdp60aVbs90bBmpx6/jVFMnQs1M273F154eKAB1xhrNqz7Xno+PlTM3vpekJJHAkz5INBxlNRd7Trvexb2TtXKPrBDpeu2B0BhIgIQQHFIompb+p4JjYhSYrQ8+OAe2DsjCqwQA/eCgp7B9V43pYQhefTeeSQfGOg6RaJ86y170kSBMgoBBFE8w3/NyHU4AozYkwAAAABJRU5ErkJggg==",
+      "[0.46528863530223963, 0.6298401998010111, 0.6473430932607769, 0.7424110134215923, 0.7063493674998477, 0.6912221567950618, 0.6098804036630185, 0.4438262705841743, 0.480659505776767, 0.5004162521066418, 0.5491888160165689, 0.4774716237893155, 0.40138886068752666, 0.6265507929095007, 0.59325062437816, 0.671181140733822, 0.8789620093809012, 0.8519969948628399, 0.8549006071189262, 0.8188592661779934, 0.4600905602144206, 0.56222461369774, 0.5829966090682044, 0.5451481248350221, 0.49060894637454566, 0.7481979329529533, 0.7828991451603078, 0.7389591666835875, 1.0, 0.8168693780584377, 0.7316290686105301, 0.6412312940364271, 0.6581859530142744, 0.765315031777295, 0.7342484111352515, 0.46262868281589475, 0.40587626144693295, 0.42317610509858067, 0.3473166967857215, 0.5854738167272432, 0.5930272695892302, 0.5819001401043676, 0.5831793538955106, 0.33190521634957054, 0.2955186907348373, 0.3146256776787346, 0.2891835367215578, 0.27123393368393267, 0.24605575747730918, 0.2611626632012833]",
+      "a87681080790690e7a94c872c00c6a61b108bf9200a3f241102c85eb0e23d88e"
+    ]
+  ];
+  /* ========= Global Constants & SVG Icons ========= */
   const playSVG = `<svg class="play-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><polygon points="6 4 20 12 6 20" /></svg>`;
   const pauseSVG = `<svg class="pause-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
 
-  /* ==== Global state ==== */
-  const tracks = [];
-  let playingIndex = -1;
-  // Footer controls references
-  const footerPlayBtn = document.querySelector('#footer-controls .btn-play-pause');
-  const footerVolumeInput = document.querySelector('#footer-controls input[type="range"]');
-  /** Time formatting for mm:ss */
-  function formatTime(s) {
-    if(!s) return '0:00';
-    const m = Math.floor(s / 60);
-    const ss = Math.floor(s % 60);
-    return `${m}:${ss < 10 ? '0' : ''}${ss}`;
+  /* ========= Accessibility & UX ========= */
+
+  /**
+   * Formats seconds to mm:ss string
+   * Returns '0:00' if input falsy.
+   */
+  function formatTime(seconds) {
+    if (!seconds) return '0:00';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
   }
-  /** Draw waveform canvas with 1px spacing, highlight hover */
+
+  /* ========= Waveform Drawing ========= */
+
+  /**
+   * Draws waveform bars on a given 2D canvas context.
+   * Colors differ by play progress and hover state.
+   * @param {CanvasRenderingContext2D} ctx - Canvas 2D context.
+   * @param {Array<number>} ampData - normalized amplitude array (0..1).
+   * @param {number} progress - fraction played (0..1).
+   * @param {number} width - canvas width.
+   * @param {number} height - canvas height.
+   * @param {number} hoverIndex - waveform bar index hovered (-1 if none).
+   * @param {boolean} isHovering - whether mouse is currently hovering.
+   */
   function drawWaveform(ctx, ampData, progress, width, height, hoverIndex = -1, isHovering = false) {
     ctx.clearRect(0, 0, width, height);
     const midY = height / 2;
     const total = ampData.length;
     const barWidth = width / (total * 2);
     const spaceWidth = barWidth;
-    for(let i = 0; i < total; i++) {
+
+    for (let i = 0; i < total; i++) {
       const amp = ampData[i];
       const barHeight = amp * height;
       const x = i * (barWidth + spaceWidth);
       let fillStyle;
-      if(isHovering && i === hoverIndex) {
-        fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--waveform-hover');
-      } else if(i / total <= progress) {
-        fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--waveform-active');
+
+      if (isHovering && i === hoverIndex) {
+        fillStyle = getComputedStyle(document.documentElement)
+          .getPropertyValue('--waveform-hover').trim();
+      } else if (i / total <= progress) {
+        fillStyle = getComputedStyle(document.documentElement)
+          .getPropertyValue('--waveform-active').trim();
       } else {
-        fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--waveform-inactive');
+        fillStyle = getComputedStyle(document.documentElement)
+          .getPropertyValue('--waveform-inactive').trim();
       }
-      ctx.fillStyle = fillStyle.trim();
+
+      ctx.fillStyle = fillStyle;
       ctx.fillRect(x, midY - barHeight / 2, barWidth, barHeight);
     }
   }
+
+  /* ========= UI Construction & Track Element Creation ========= */
+
   /**
-   * Create track item with 4 containers per new spec,
-   * and manage playback and interactions.
+   * Creates and returns a track DOM element with all UI components,
+   * sets up event listeners for playback and waveform interaction.
+   * @param {Array} data - musicData single track array.
+   * @param {number} idx - track index in playlist.
+   * @returns {object} track object containing references to components and audio functions.
    */
   function createTrackElement(data, idx) {
+    // Main wrapper
     const trackElem = document.createElement('div');
     trackElem.className = 'track-item content';
-    // 1st container: cover art
+
+    // 1. Cover Art Container
     const coverContainer = document.createElement('div');
     coverContainer.className = 'track-cover-container';
     const coverImg = document.createElement('img');
@@ -451,32 +567,41 @@
     coverImg.className = 'track-cover';
     coverImg.src = `data:image/png;base64,${data[7]}`;
     coverContainer.appendChild(coverImg);
-    // 2nd container: split into 3 subcontainers
+
+    // 2. Info Container (flex row with 3 sections)
     const infoContainer = document.createElement('div');
     infoContainer.className = 'track-info-container';
-    // 2.1 play button container (no left margin/padding)
+
+    // 2.1 Play / Pause Button Container
     const playBtnContainer = document.createElement('div');
     playBtnContainer.className = 'play-btn-container';
+
     const playPauseBtn = document.createElement('button');
     playPauseBtn.className = 'btn-play-pause';
     playPauseBtn.setAttribute('aria-label', `Play or Pause ${data[2]} by ${data[1]}`);
-    playBtnContainer.appendChild(playPauseBtn);
-    // Initialize with play SVG
     playPauseBtn.innerHTML = playSVG;
-    // 2.2 artist/title container stacked
+    playBtnContainer.appendChild(playPauseBtn);
+
+    // 2.2 Artist & Title Container (stacked)
     const artistTitleContainer = document.createElement('div');
     artistTitleContainer.className = 'artist-title-container';
+
     const artistDiv = document.createElement('div');
     artistDiv.className = 'track-artist';
     artistDiv.textContent = data[1];
+
     const titleDiv = document.createElement('div');
     titleDiv.className = 'track-title';
     titleDiv.textContent = data[2];
+
     artistTitleContainer.appendChild(artistDiv);
     artistTitleContainer.appendChild(titleDiv);
-    // 2.3 meta container genre/date first row, time second row
+
+    // 2.3 Meta Info Container - Genre & Date + Time Row
     const metaContainer = document.createElement('div');
     metaContainer.className = 'meta-info-container';
+
+    // Genre and Date Row
     const genreDateRow = document.createElement('div');
     genreDateRow.className = 'genre-date-row';
     const genreDiv = document.createElement('div');
@@ -487,9 +612,10 @@
     dateDiv.textContent = data[3];
     genreDateRow.appendChild(genreDiv);
     genreDateRow.appendChild(dateDiv);
+
+    // Time Row: current play time | separator | duration
     const timeRow = document.createElement('div');
     timeRow.className = 'time-row';
-    // Add play position and duration with separator "|"
     const playPosDiv = document.createElement('div');
     playPosDiv.className = 'play-pos';
     playPosDiv.textContent = '0:00';
@@ -502,12 +628,16 @@
     timeRow.appendChild(playPosDiv);
     timeRow.appendChild(sepDiv);
     timeRow.appendChild(durDiv);
+
     metaContainer.appendChild(genreDateRow);
     metaContainer.appendChild(timeRow);
+
+    // Append all 3 info subcontainers
     infoContainer.appendChild(playBtnContainer);
     infoContainer.appendChild(artistTitleContainer);
     infoContainer.appendChild(metaContainer);
-    // 3rd container: waveform
+
+    // 3. Waveform Container - canvas for visualization
     const waveformContainer = document.createElement('div');
     waveformContainer.className = 'waveform-container';
     const waveformCanvas = document.createElement('canvas');
@@ -515,22 +645,22 @@
     waveformCanvas.width = 600;
     waveformCanvas.height = 110;
     waveformContainer.appendChild(waveformCanvas);
-    // 4th container: tracklist toggle & content
+
+    // 4. Tracklist Toggle Container (optional tracklist)
     const tracklistContainer = document.createElement('div');
     tracklistContainer.className = 'tracklist-container';
+
     let toggleBtn = null;
     let tracklistContent = null;
-    if(data[6].trim() !== '') {
+    if (data[6].trim() !== '') {
       toggleBtn = document.createElement('button');
       toggleBtn.className = 'btn-toggle-tracklist';
       toggleBtn.setAttribute('aria-expanded', 'false');
-      // Remove ▼ and ▲ from text but keep CSS for arrow
-      toggleBtn.textContent = 'Show Tracklist';
+      toggleBtn.textContent = 'Tracklist';
       toggleBtn.addEventListener('click', () => {
         const expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
         toggleBtn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
         tracklistContent.classList.toggle('visible');
-        toggleBtn.textContent = 'Show Tracklist';
       });
       tracklistContent = document.createElement('pre');
       tracklistContent.className = 'tracklist-content';
@@ -538,62 +668,70 @@
       tracklistContainer.appendChild(toggleBtn);
       tracklistContainer.appendChild(tracklistContent);
     }
-    // Append all 4 containers to track item
+
+    // Append all main containers into track item
     trackElem.appendChild(coverContainer);
     trackElem.appendChild(infoContainer);
     trackElem.appendChild(waveformContainer);
-    if(tracklistContainer.childNodes.length) {
+    if (tracklistContainer.childNodes.length > 0) {
       trackElem.appendChild(tracklistContainer);
     }
-    // Initialize audio element and playback state (fallback only)
-    let audioElement = null;
-    const ampData = JSON.parse(data[8]);
-    const ctx = waveformCanvas.getContext('2d');
-    const width = waveformCanvas.width;
-    const height = waveformCanvas.height;
-    let mouseHovering = false;
-    let hoverIndex = -1;
-    const duration = data[5];
 
-    // Fallback audio setup (HTML5 audio element)
-    audioElement = document.createElement('audio');
+    /* ========= Audio Streaming & Playback Control ========= */
+
+    // Create hidden audio element for fallback streaming
+    const audioElement = document.createElement('audio');
     audioElement.src = `music/${data[0]}`;
     audioElement.preload = 'metadata';
     audioElement.style.display = 'none';
     audioElement.controls = false;
     trackElem.appendChild(audioElement);
 
-    // Draw initial waveform (starting at 0)
+    // Waveform drawing context and metadata
+    const ctx = waveformCanvas.getContext('2d');
+    const width = waveformCanvas.width;
+    const height = waveformCanvas.height;
+    const ampData = JSON.parse(data[8]);
+    const duration = data[5];
+
+    // Draw initial waveform with zero progress
     drawWaveform(ctx, ampData, 0, width, height);
 
-    // Variables for time update
+    /* ========= Playback Progress Updates & Waveform Interaction ========= */
+
+    // State vars to handle waveform interaction
+    let mouseHovering = false;
+    let hoverIndex = -1;
+
+    // Update waveform, time display as audio plays (unless hovering)
     audioElement.addEventListener('timeupdate', () => {
-      if(!mouseHovering) {
+      if (!mouseHovering) {
         const current = audioElement.currentTime;
         const dur = audioElement.duration || duration;
         const prog = dur ? current / dur : 0;
         drawWaveform(ctx, ampData, prog, width, height);
-        timeRow.querySelector('.play-pos').textContent = formatTime(current);
-        timeRow.querySelector('.duration').textContent = formatTime(dur);
-        if(playingIndex === idx) updateFooterTime(current);
+        playPosDiv.textContent = formatTime(current);
+        durDiv.textContent = formatTime(dur);
       }
     });
+
+    // On track end, reset UI and play next track
     audioElement.addEventListener('ended', () => {
       playPauseBtn.innerHTML = playSVG;
-      if(playingIndex === idx) {
+      if (playingIndex === idx) {
         playingIndex = -1;
         updateFooter(null, null, -1);
         playNextTrack(idx);
       }
     });
 
-    /* Play/Pause button logic */
+    // Play/Pause button toggles playback state for this track
     playPauseBtn.addEventListener('click', () => {
-      if(audioElement.paused) {
-        // Pause others
-        tracks.forEach(({audio, btnPlay}, i) => {
-          if(i !== idx) {
-            if(audio) audio.pause();
+      if (audioElement.paused) {
+        // Pause all other track audios
+        tracks.forEach(({ audio, btnPlay }, i) => {
+          if (i !== idx) {
+            audio?.pause();
             btnPlay.innerHTML = playSVG;
           }
         });
@@ -604,44 +742,47 @@
       } else {
         audioElement.pause();
         playPauseBtn.innerHTML = playSVG;
-        if(playingIndex === idx) playingIndex = -1;
+        if (playingIndex === idx) playingIndex = -1;
         updateFooter(null, null, -1);
       }
     });
-    /* Waveform click seek */
+
+    // Clicking waveform seeks playback position
     waveformCanvas.addEventListener('click', e => {
       const rect = waveformCanvas.getBoundingClientRect();
       const ratio = (e.clientX - rect.left) / rect.width;
-      const dur = audioElement ? audioElement.duration || duration : duration;
-      if(audioElement) {
-        audioElement.currentTime = ratio * dur;
-        drawWaveform(ctx, ampData, ratio, width, height);
-      }
+      const dur = audioElement.duration || duration;
+      audioElement.currentTime = ratio * dur;
+      drawWaveform(ctx, ampData, ratio, width, height);
     });
-    /* Hover effect: timestamp & peak highlight */
+
+    // Hovering waveform shows hover time, highlights bar
     waveformCanvas.addEventListener('mousemove', e => {
       mouseHovering = true;
       const rect = waveformCanvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const ratio = x / rect.width;
       hoverIndex = Math.min(Math.max(Math.floor(ratio * ampData.length), 0), ampData.length - 1);
-      const dur = audioElement ? audioElement.duration || duration : duration;
-      timeRow.querySelector('.play-pos').textContent = formatTime(ratio * dur);
-      timeRow.querySelector('.duration').textContent = formatTime(dur);
-      const prog = audioElement ? (audioElement.currentTime / dur) : 0;
+      const dur = audioElement.duration || duration;
+      playPosDiv.textContent = formatTime(ratio * dur);
+      durDiv.textContent = formatTime(dur);
+      const prog = audioElement.currentTime / dur;
       drawWaveform(ctx, ampData, prog, width, height, hoverIndex, true);
     });
+
+    // Leaving waveform resets to current playback time display & bar
     waveformCanvas.addEventListener('mouseleave', () => {
       mouseHovering = false;
       hoverIndex = -1;
-      const dur = audioElement ? audioElement.duration || duration : duration;
-      const curTime = audioElement ? audioElement.currentTime : 0;
+      const dur = audioElement.duration || duration;
+      const curTime = audioElement.currentTime;
       const prog = dur ? curTime / dur : 0;
       drawWaveform(ctx, ampData, prog, width, height);
-      timeRow.querySelector('.play-pos').textContent = formatTime(curTime);
-      timeRow.querySelector('.duration').textContent = formatTime(dur);
+      playPosDiv.textContent = formatTime(curTime);
+      durDiv.textContent = formatTime(dur);
     });
 
+    // Return track object with references & control functions
     return {
       container: trackElem,
       audio: audioElement,
@@ -651,25 +792,39 @@
       ampData,
       width,
       height,
-      isWebAudio: false,
       currentTimeFn: () => audioElement.currentTime,
       playAudioFn: () => audioElement.play(),
       pauseAudioFn: () => audioElement.pause()
     };
   }
-  /** Update global footer controls */
+
+  /* ========= Global State Management & Playback Control ========= */
+
+  const tracks = [];
+  let playingIndex = -1;
+
+  const footerPlayBtn = document.querySelector('#footer-controls .btn-play-pause');
+  const footerVolumeInput = document.querySelector('#footer-controls input[type="range"]');
+
+  /**
+   * Updates the global footer controls:
+   * - Synchronizes play/pause icon and state
+   * - Associates global controls with the active track
+   * - Adjusts volume slider fill percentage
+   * @param {HTMLAudioElement|null} audio - currently playing audio or null if none.
+   * @param {HTMLButtonElement|null} playBtn - corresponding play button or null.
+   * @param {number} idx - current track index or -1 if none.
+   */
   function updateFooter(audio, playBtn, idx) {
-    if(audio || playBtn) {
-      let paused = true;
-      if(audio) paused = audio.paused;
-      else if(playBtn) paused = playBtn.innerHTML === playSVG;
+    if (audio || playBtn) {
+      const paused = audio ? audio.paused : playBtn.innerHTML === playSVG;
       footerPlayBtn.innerHTML = paused ? playSVG : pauseSVG;
       footerPlayBtn.disabled = false;
       footerPlayBtn._linkedAudio = audio;
       footerPlayBtn._linkedPlayBtn = playBtn;
       footerPlayBtn._linkedIndex = idx;
-      if(audio) footerVolumeInput.value = audio.volume;
-      updateVolumeBar(audio? audio.volume : 1);
+      if (audio) footerVolumeInput.value = audio.volume;
+      updateVolumeBar(audio ? audio.volume : 1);
     } else {
       footerPlayBtn.innerHTML = playSVG;
       footerPlayBtn.disabled = true;
@@ -679,22 +834,66 @@
       updateVolumeBar(1);
     }
   }
-  function updateFooterTime(_cur) {} // reserved, no implementation yet
 
-  // Update volume input background fill using CSS variable
+  /**
+   * Updates the CSS variable controlling volume slider's filled track
+   * @param {number} volume - value between 0 and 1
+   */
   function updateVolumeBar(volume) {
     const perc = Math.round(volume * 100);
     footerVolumeInput.style.setProperty('--vol-percent', perc + '%');
   }
 
-  /* Global footer play/pause */
+  /**
+   * Plays the next track in the playlist, if any.
+   * Pauses all other tracks.
+   * Scrolls the new track into vertical center view if not fully visible.
+   * @param {number} currentIndex - index of the track that just ended.
+   */
+  function playNextTrack(currentIndex) {
+    let nextIdx = currentIndex + 1;
+    if (nextIdx >= tracks.length) {
+      updateFooter(null, null, -1);
+      return; // No more tracks
+    }
+    const { audio, btnPlay, container } = tracks[nextIdx];
+    tracks.forEach(({ audio: a, btnPlay: b }) => {
+      if (a && a !== audio) {
+        a.pause();
+        b.innerHTML = playSVG;
+      }
+    });
+    audio.currentTime = 0;
+    audio.play();
+    btnPlay.innerHTML = pauseSVG;
+    playingIndex = nextIdx;
+    updateFooter(audio, btnPlay, nextIdx);
+
+    // Scroll track element into vertical center of viewport if not fully visible
+    const bounding = container.getBoundingClientRect();
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    const isFullyVisible = bounding.top >= 0 && bounding.bottom <= viewportHeight;
+    if (!isFullyVisible) {
+      const scrollToY = window.scrollY + bounding.top - (viewportHeight / 2) + (bounding.height / 2);
+      window.scrollTo({
+        top: scrollToY,
+        behavior: 'smooth'
+      });
+    }
+  }
+
+  /* ========= Global Footer Controls Event Handlers ========= */
+
+  // Global footer play/pause button toggles currently playing track
   footerPlayBtn.addEventListener('click', () => {
     const audio = footerPlayBtn._linkedAudio;
     const playBtn = footerPlayBtn._linkedPlayBtn;
-    if(!audio) return;
-    if(audio.paused) {
-      tracks.forEach(({audio: a, btnPlay: b}) => {
-        if(a !== audio && a) {
+    if (!audio) return;
+
+    if (audio.paused) {
+      // Pause all other tracks except this one
+      tracks.forEach(({ audio: a, btnPlay: b }) => {
+        if (a && a !== audio) {
           a.pause();
           b.innerHTML = playSVG;
         }
@@ -709,104 +908,74 @@
     }
   });
 
-  /* Global volume update */
+  // Volume slider input event updates all track volumes
   footerVolumeInput.addEventListener('input', e => {
     const vol = parseFloat(e.target.value);
-    tracks.forEach(({audio}) => {
-      if(audio) audio.volume = vol;
+    tracks.forEach(({ audio }) => {
+      if (audio) audio.volume = vol;
     });
     updateVolumeBar(vol);
   });
 
-  /* Play next track for seamless playback */
-  function playNextTrack(currentIndex) {
-    let nextIdx = currentIndex + 1;
-    if(nextIdx >= tracks.length) {
-      updateFooter(null, null, -1);
-      return;
-    }
-    const {audio, btnPlay, container} = tracks[nextIdx];
-    // Pause all except next
-    tracks.forEach(({audio: a, btnPlay: b}) => {
-      if(a && a !== audio) {
-        a.pause();
-        b.innerHTML = playSVG;
-      }
+  // Volume slider mouse wheel controls volume in steps
+  footerVolumeInput.addEventListener('wheel', e => {
+    e.preventDefault();
+    const delta = e.deltaY || e.detail || e.wheelDelta;
+    const step = 0.05;
+    let vol = parseFloat(footerVolumeInput.value);
+
+    vol += delta < 0 ? step : -step;
+    vol = Math.min(1, Math.max(0, vol));
+    footerVolumeInput.value = vol;
+    tracks.forEach(({ audio }) => {
+      if (audio) audio.volume = vol;
     });
-    audio.currentTime = 0;
-    audio.play();
-    btnPlay.innerHTML = pauseSVG;
-    playingIndex = nextIdx;
-    updateFooter(audio, btnPlay, nextIdx);
-    // Scroll track into vertical center view if not visible
-    const bounding = container.getBoundingClientRect();
-    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-    const isFullyVisible = bounding.top >= 0 && bounding.bottom <= viewportHeight;
-    if(!isFullyVisible) {
-      // scroll so the element is vertically centered fast but smooth
-      const scrollToY = window.scrollY + bounding.top - (viewportHeight / 2) + (bounding.height / 2);
-      window.scrollTo({
-        top: scrollToY,
-        behavior: 'smooth'
-      });
-    }
-  }
+    updateVolumeBar(vol);
+  }, { passive: false });
 
-  // Handle keyboard skip time and volume control by mouse wheel on volume slider
-  window.addEventListener('keydown', (e) => {
-    // Only apply if a track is playing
+  /* ========= Keyboard Shortcut Handlers ========= */
+
+  // Keyboard shortcuts for playback skip (left/right arrows)
+  window.addEventListener('keydown', e => {
     if (playingIndex === -1) return;
-
-    const currentAudio = tracks[playingIndex].audio;
+    const currentAudio = tracks[playingIndex]?.audio;
     if (!currentAudio) return;
 
-    const skipSmall = 10; // seconds for cursor alone
-    const skipLarge = 60; // seconds for cursor+ctrl
+    const skipSmall = 10; // seconds for normal arrow keys
+    const skipLarge = 60; // seconds for ctrl + arrow keys
 
     if (e.code === 'ArrowRight' || e.code === 'ArrowLeft') {
       e.preventDefault();
       const direction = e.code === 'ArrowRight' ? 1 : -1;
       const skipAmount = e.ctrlKey ? skipLarge : skipSmall;
       let newTime = currentAudio.currentTime + direction * skipAmount;
+
       if (newTime < 0) newTime = 0;
       if (currentAudio.duration && newTime > currentAudio.duration) newTime = currentAudio.duration;
+
       currentAudio.currentTime = newTime;
     }
   });
 
-  // Volume control by mouse wheel over the global volume control slider
-  footerVolumeInput.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    const delta = e.deltaY || e.detail || e.wheelDelta;
-    const step = 0.05;
-    let vol = parseFloat(footerVolumeInput.value);
-    if (delta < 0) {
-      vol += step;
-    } else {
-      vol -= step;
-    }
-    vol = Math.min(1, Math.max(0, vol));
-    footerVolumeInput.value = vol;
-    tracks.forEach(({audio}) => {
-      if (audio) audio.volume = vol;
-    });
-    updateVolumeBar(vol);
-  }, { passive: false });
+  /* ========= Initialization & Lifecycle ========= */
 
-  // Init UI and playback
   const playlistRoot = document.getElementById('playlist-container');
+
+  // Create UI, track objects and append to playlist
   musicData.forEach((trackData, i) => {
     const trackObj = createTrackElement(trackData, i);
     tracks.push(trackObj);
     playlistRoot.appendChild(trackObj.container);
   });
-  // Set initial footer button icon to play
+
+  // Initialize footer play button icon and volume bar
   footerPlayBtn.innerHTML = playSVG;
   updateVolumeBar(1);
-  // Pause all on unload
+
+  // Pause all audio on page unload for clean exit
   window.addEventListener('pagehide', () => {
-    tracks.forEach(({audio}) => {
-      if(audio) audio.pause();
+    tracks.forEach(({ audio }) => {
+      audio?.pause();
     });
   });
 </script>
