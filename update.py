@@ -146,6 +146,7 @@ def main():
     tracks.sort(key=lambda x: x[0], reverse=True)
 
     # Write to JS file
+    # Reason for JS: it works serverless when site is accessed via file://
     with open(output_js, "w", encoding="utf-8") as f:
         f.write("const musicData = ")
         json.dump(tracks, f, indent=2, ensure_ascii=False)

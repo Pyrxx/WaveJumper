@@ -428,5 +428,12 @@ svg.play-icon, svg.pause-icon, svg.prev-icon, svg.next-icon, svg.mute-icon, svg.
 	width: 20px;
 	height: 20px;
 	display: block;
-	fill: currentColor;
+}
+svg.play-icon, svg.pause-icon, svg.prev-icon, svg.next-icon {
+	fill: var(--background);
+	stroke: transparent;
+}
+svg.mute-icon, svg.unmute-icon {
+	fill: transparent;
+	stroke: var(--text-color-muted);
 }
