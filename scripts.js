@@ -553,7 +553,37 @@ footerVolumeInput.addEventListener('wheel', e => {
 	updateMuteButton();
 }, { passive: false });
 
-/* ========= Keyboard Shortcut Handlers ========= */
+/* ========= Media Session & Keyboard Shortcut Handlers ========= */
+// Setup media session if available
+if ('mediaSession' in navigator) {
+	const mediaSession = navigator.mediaSession;
+
+	// Define action handlers for media keys
+	mediaSession.setActionHandler('play', () => {
+		if (footerPlayBtn._linkedAudio && footerPlayBtn._linkedAudio.paused) {
+			footerPlayBtn.click();
+		}
+	});
+
+	mediaSession.setActionHandler('pause', () => {
+		if (footerPlayBtn._linkedAudio && !footerPlayBtn._linkedAudio.paused) {
+			footerPlayBtn.click();
+		}
+	});
+
+	mediaSession.setActionHandler('previoustrack', () => {
+		if (playingIndex !== -1) {
+			footerPrevBtn.click();
+		}
+	});
+
+	mediaSession.setActionHandler('nexttrack', () => {
+		if (playingIndex !== -1) {
+			footerNextBtn.click();
+		}
+	});
+}
+
 // Keyboard shortcuts for playback control
 window.addEventListener('keydown', e => {
 	if (e.code === 'Space') {
@@ -593,6 +623,7 @@ window.addEventListener('keydown', e => {
 		currentAudio.currentTime = newTime;
 	}
 });
+
 
 /* ========= Initialization & Lifecycle ========= */
 const playlistRoot = document.getElementById('playlist-container');
