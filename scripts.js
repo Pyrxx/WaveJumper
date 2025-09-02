@@ -46,7 +46,7 @@ const drawWaveform = (ctx, ampData, progress, width, height, hoverIndex = -1, is
 		if (isHovering && i === hoverIndex) {
 			fillStyle = getComputedStyle(document.documentElement)
 				.getPropertyValue('--highlight-alt').trim();
-		} else if (i / total <= progress) {
+		} else if (progress > 0 && i / total <= progress) {
 			fillStyle = getComputedStyle(document.documentElement)
 				.getPropertyValue('--highlight-muted').trim();
 		} else {
