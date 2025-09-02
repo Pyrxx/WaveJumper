@@ -124,6 +124,14 @@ def main():
         title = tags.get("\xa9nam", [None])[0]
         genre = tags.get("\xa9gen", [None])[0]
         comment = tags.get("\xa9cmt", [None])[0]
+
+        def wrap_comment_in_paragraphs(comment):
+            if not comment:
+                return comment
+            # Split by line breaks, wrap each non-empty line in <p> tags, and join back with line breaks
+            return "".join(f"<p>{line}</p>\n" for line in comment.split("\r\n") if line.strip())
+
+        comment = wrap_comment_in_paragraphs(comment)
         amplitudeData_json, duration = compute_amplitudeData(filepath)
         cover_b64 = extract_cover_base64(tags)
         date = extract_date_from_title(title)
