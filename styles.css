@@ -33,6 +33,7 @@ footer, header, hgroup, menu, nav, section {
 body {
 	line-height: 1;
 	font-family: var(--system-ui);
+	font-size: 16px;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	background: var(--background);
@@ -72,7 +73,6 @@ table {
 	/* Spacing & sizing */
 	--content-width: 460px;
 	--btn-size: 38px;
-	--font-family-base: Arial, sans-serif;
 	/* Transitions */
 	--transition-default: 0.3s ease;
 }
@@ -175,7 +175,7 @@ table {
 }
 .track-artist {
 	font-weight: 400;
-	font-size: 16px;
+	font-size: 1rem;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -184,7 +184,7 @@ table {
 }
 .track-title {
 	font-weight: 700;
-	font-size: 18px;
+	font-size: 1.2rem;
 	line-height: 1.1;
 	white-space: nowrap;
 	overflow: hidden;
@@ -265,19 +265,17 @@ canvas.waveform-canvas {
 }
 .btn-toggle-details::after {
 	content: '▼';
-	font-size: 0.6rem;
+	font-size: 0.8rem;
 	transition: transform var(--transition-default);
 }
 .btn-toggle-details[aria-expanded="true"]::after {
 	transform: rotate(-180deg);
 }
 .details-content {
+	font-size: 0.9rem;
 	display: none;
 	margin-top: 8px;
-	font-family: monospace;
 	white-space: pre-wrap;
-	max-height: 150px;
-	overflow-y: auto;
 	color: var(--text-color-muted);
 	width: 100%;
 }
