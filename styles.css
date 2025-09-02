@@ -32,7 +32,7 @@ footer, header, hgroup, menu, nav, section {
 }
 body {
 	line-height: 1;
-	font-family: Arial, sans-serif;
+	font-family: var(--system-ui);
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	background: var(--background);
@@ -60,20 +60,15 @@ table {
 	Benefits: cleaner code, easy theming, no JS needed for theme detection.
 	========================================================================== */
 :root {
-	/* Buttons */
-	--btn-bg: #383351;
-	--btn-color: #fff;
-	--btn-hover-bg: #4f4a85;
-	/* Text colors */
-	--text-color-muted: #555;
-	--text-color-bright: #222;
-	/* Background */
-	--footer-bg: #eee;
-	--background: #fff;
-	/* Waveform colors */
-	--waveform-active: var(--btn-bg);
-	--waveform-inactive: var(--text-color-muted);
-	--waveform-hover: #fff100;
+	--system-ui: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+	/* Colors */
+	--background: #a8b5c2;
+	--text-color-bright: #12191d;
+	--highlight-muted: #fbff00;
+	--background-alt: oklch(from var(--background) calc(l + 0.05) c h);
+	--text-color-muted: oklch(from var(--text-color-bright) calc(l - 0.15) c h);
+	--highlight-bright: oklch(from var(--highlight-muted) calc(l + 0.10) c h);
+	--highlight-alt: oklch(from var(--highlight-muted) calc(l - 0.20) calc(l + 0.20) h);
 	/* Spacing & sizing */
 	--content-width: 460px;
 	--btn-size: 38px;
@@ -83,16 +78,9 @@ table {
 }
 @media (prefers-color-scheme: dark) {
 	:root {
-	--btn-bg: #a3a3e3;
-	--btn-color: #222;
-	--btn-hover-bg: #8a8aea;
-	--text-color-muted: #ccc;
-	--text-color-bright: #f0f0f0;
-	--footer-bg: #222;
-	--background: #121212;
-	--waveform-active: var(--btn-bg);
-	--waveform-inactive: var(--text-color-muted);
-	--waveform-hover: #5050d4;
+		--background: #12191d;
+		--text-color-bright: #f0f0f0;
+		--highlight-muted: #b9bb30;
 	}
 }
 /* ==========================================================================
@@ -151,8 +139,8 @@ table {
 	padding: 0;
 }
 .btn-play-pause {
-	background: var(--btn-bg);
-	color: var(--btn-color);
+	background: var(--highlight-muted);
+	color: var(--background);
 	border: none;
 	border-radius: 4px;
 	cursor: pointer;
@@ -169,11 +157,11 @@ table {
 	font-size: 1rem;
 	transition: background-color var(--transition-default);
 }
-.btn-play-pause:hover,
-.btn-play-pause:focus-visible {
-	background: var(--btn-hover-bg);
-	outline-offset: 2px;
-	outline: 2px solid var(--btn-hover-bg);
+.button:hover,
+#volume-slider:hover {
+	background: var(--highlight-bright);
+	outline-offset: 1px;
+	outline: 1px solid var(--highlight-bright);
 }
 .artist-title-container {
 	flex: 1 1 auto;
@@ -305,7 +293,7 @@ canvas.waveform-canvas {
 	left: 0;
 	right: 0;
 	height: 60px;
-	background-color: var(--footer-bg);
+	background-color: var(--background-alt);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -326,10 +314,10 @@ canvas.waveform-canvas {
 	font-size: 1.1rem;
 	min-width: var(--btn-size);
 	cursor: pointer;
-	background: var(--btn-bg);
+	background: var(--highlight-muted);
 	border: none;
 	border-radius: 4px;
-	color: var(--btn-color);
+	color: var(--background);
 	user-select: none;
 	display: flex;
 	align-items: center;
@@ -337,13 +325,6 @@ canvas.waveform-canvas {
 	width: var(--btn-size);
 	height: var(--btn-size);
 	transition: background-color var(--transition-default);
-}
-
-#footer-controls .btn-play-pause:hover, #footer-controls .btn-prev:hover, #footer-controls .btn-next:hover,
-#footer-controls .btn-play-pause:focus-visible, #footer-controls .btn-prev:focus-visible, #footer-controls .btn-next:focus-visible {
-	background: var(--btn-hover-bg);
-	outline-offset: 2px;
-	outline: 2px solid var(--btn-hover-bg);
 }
 
 /* Volume controls styling */
@@ -372,12 +353,6 @@ canvas.waveform-canvas {
 	text-align: right;
 	color: var(--text-color-muted);
 }
-#footer-controls .btn-play-pause:hover,
-#footer-controls .btn-play-pause:focus-visible {
-	background: var(--btn-hover-bg);
-	outline-offset: 2px;
-	outline: 2px solid var(--btn-hover-bg);
-}
 #footer-controls input[type=range] {
 	width: 120px;
 	cursor: pointer;
@@ -394,14 +369,14 @@ canvas.waveform-canvas {
 #footer-controls input[type=range]::-webkit-slider-runnable-track {
 	height: 20px;
 	background: linear-gradient(to right,
-	var(--btn-bg) 0%, var(--btn-bg) var(--vol-percent),
+	var(--highlight-muted) 0%, var(--highlight-muted) var(--vol-percent),
 	var(--background) var(--vol-percent), var(--background) 100%);
 	border-radius: 5px;
 }
 #footer-controls input[type=range]::-moz-range-track {
 	height: 20px;
 	background: linear-gradient(to right,
-	var(--btn-bg) 0%, var(--btn-bg) var(--vol-percent),
+	var(--highlight-muted) 0%, var(--highlight-muted) var(--vol-percent),
 	var(--background) var(--vol-percent), var(--background) 100%);
 	border-radius: 5px;
 	border: none;

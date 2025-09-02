@@ -45,13 +45,13 @@ const drawWaveform = (ctx, ampData, progress, width, height, hoverIndex = -1, is
 
 		if (isHovering && i === hoverIndex) {
 			fillStyle = getComputedStyle(document.documentElement)
-				.getPropertyValue('--waveform-hover').trim();
+				.getPropertyValue('--highlight-alt').trim();
 		} else if (i / total <= progress) {
 			fillStyle = getComputedStyle(document.documentElement)
-				.getPropertyValue('--waveform-active').trim();
+				.getPropertyValue('--highlight-muted').trim();
 		} else {
 			fillStyle = getComputedStyle(document.documentElement)
-				.getPropertyValue('--waveform-inactive').trim();
+				.getPropertyValue('--text-color-muted').trim();
 		}
 
 		ctx.fillStyle = fillStyle;
@@ -114,7 +114,7 @@ const createTrackElement = (data, idx) => {
 	const playBtnContainer = document.createElement('div');
 	playBtnContainer.className = 'play-btn-container';
 	const playPauseBtn = document.createElement('button');
-	playPauseBtn.className = 'btn-play-pause';
+	playPauseBtn.className = 'button btn-play-pause';
 	playPauseBtn.setAttribute('aria-label', `Play or Pause ${data[2]} by ${data[1]}`);
 	playPauseBtn.innerHTML = playSVG;
 	playBtnContainer.appendChild(playPauseBtn);
