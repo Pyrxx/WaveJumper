@@ -196,9 +196,9 @@ const createTrackElement = (data, idx) => {
 			detailsContent.classList.toggle('visible');
 		});
 
-		detailsContent = document.createElement('pre');
+		detailsContent = document.createElement('div');
 		detailsContent.className = 'details-content';
-		detailsContent.textContent = data[6];
+		detailsContent.innerHTML = data[6];
 		detailsContainer.appendChild(toggleBtn);
 		detailsContainer.appendChild(detailsContent);
 	}
