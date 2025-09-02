@@ -1,4 +1,4 @@
-# ![favicon](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAABlBMVEUSEhL///8L92e7AAAAJUlEQVQY02NgwAYYGTEFkMQgPCQx0gQYGSkXINJaDKdj8xwyAAA2kABlyh4prwAAAABJRU5ErkJggg==) WaveJumper (WIP)
+# WaveJumper (WIP) ![favicon](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAABlBMVEUSEhL///8L92e7AAAAJUlEQVQY02NgwAYYGTEFkMQgPCQx0gQYGSkXINJaDKdj8xwyAAA2kABlyh4prwAAAABJRU5ErkJggg==) 
 
 A web-based music player with interactive waveform visualization. This project allows you to play audio tracks with visual waveforms that react to playback progress and user interactions.
 
