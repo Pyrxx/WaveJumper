@@ -179,36 +179,36 @@ const createTrackElement = (data, idx) => {
 	waveformCanvas.height = 110;
 	waveformContainer.appendChild(waveformCanvas);
 
-	// 4. Tracklist Toggle Container (optional tracklist)
-	const tracklistContainer = document.createElement('div');
-	tracklistContainer.className = 'tracklist-container';
+	// 4. Details Toggle Container - content from id3 comments, e.g. a tracklist
+	const detailsContainer = document.createElement('div');
+	detailsContainer.className = 'details-container';
 	let toggleBtn = null;
-	let tracklistContent = null;
+	let detailsContent = null;
 
 	if (data[6] != null && data[6].trim() !== '') {
 		toggleBtn = document.createElement('button');
-		toggleBtn.className = 'btn-toggle-tracklist';
+		toggleBtn.className = 'btn-toggle-details';
 		toggleBtn.setAttribute('aria-expanded', 'false');
-		toggleBtn.textContent = 'Tracklist';
+		toggleBtn.textContent = 'Details';
 		toggleBtn.addEventListener('click', () => {
 			const expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
 			toggleBtn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-			tracklistContent.classList.toggle('visible');
+			detailsContent.classList.toggle('visible');
 		});
 
-		tracklistContent = document.createElement('pre');
-		tracklistContent.className = 'tracklist-content';
-		tracklistContent.textContent = data[6];
-		tracklistContainer.appendChild(toggleBtn);
-		tracklistContainer.appendChild(tracklistContent);
+		detailsContent = document.createElement('pre');
+		detailsContent.className = 'details-content';
+		detailsContent.textContent = data[6];
+		detailsContainer.appendChild(toggleBtn);
+		detailsContainer.appendChild(detailsContent);
 	}
 
 	// Append all main containers into track item
 	trackElem.appendChild(coverContainer);
 	trackElem.appendChild(infoContainer);
 	trackElem.appendChild(waveformContainer);
-	if (tracklistContainer.childNodes.length > 0) {
-		trackElem.appendChild(tracklistContainer);
+	if (detailsContainer.childNodes.length > 0) {
+		trackElem.appendChild(detailsContainer);
 	}
 
 	/* ========= Audio Streaming & Playback Control ========= */

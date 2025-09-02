@@ -242,12 +242,12 @@ canvas.waveform-canvas {
 	border-radius: 8px;
 	background: transparent;
 }
-.tracklist-container {
+.details-container {
 	width: 100%;
 	margin-top: 0;
 	user-select: none;
 }
-.btn-toggle-tracklist {
+.btn-toggle-details {
 	background: transparent;
 	border: none;
 	cursor: pointer;
@@ -263,15 +263,15 @@ canvas.waveform-canvas {
 	padding: 0;
 	transition: transform var(--transition-default);
 }
-.btn-toggle-tracklist::after {
+.btn-toggle-details::after {
 	content: '▼';
 	font-size: 0.6rem;
 	transition: transform var(--transition-default);
 }
-.btn-toggle-tracklist[aria-expanded="true"]::after {
+.btn-toggle-details[aria-expanded="true"]::after {
 	transform: rotate(-180deg);
 }
-.tracklist-content {
+.details-content {
 	display: none;
 	margin-top: 8px;
 	font-family: monospace;
@@ -281,7 +281,7 @@ canvas.waveform-canvas {
 	color: var(--text-color-muted);
 	width: 100%;
 }
-.tracklist-content.visible {
+.details-content.visible {
 	display: block;
 }
 /* ==========================================================================
