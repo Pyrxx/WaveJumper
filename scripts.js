@@ -97,14 +97,20 @@ const createTrackElement = (data, idx) => {
 	const trackElem = document.createElement('div');
 	trackElem.className = 'track-item content';
 
-	// 1. Cover Art Container
+	// 1. Cover Art Container with direct link
 	const coverContainer = document.createElement('div');
 	coverContainer.className = 'track-cover-container';
+	const coverLink = document.createElement('a');
+	coverLink.href = `#${data[0].replace(/ /g, '-')}`;
+	coverLink.className = 'track-cover-link';
+	
 	const coverImg = document.createElement('img');
 	coverImg.alt = `${data[2]} cover art`;
 	coverImg.className = 'track-cover';
 	coverImg.src = `data:image/png;base64,${data[7]}`;
-	coverContainer.appendChild(coverImg);
+	
+	coverLink.appendChild(coverImg);
+	coverContainer.appendChild(coverLink);
 
 	// 2. Info Container (flex row with 3 sections)
 	const infoContainer = document.createElement('div');
@@ -210,6 +216,8 @@ const createTrackElement = (data, idx) => {
 	if (detailsContainer.childNodes.length > 0) {
 		trackElem.appendChild(detailsContainer);
 	}
+	// Set unique ID for track element based on filename
+	trackElem.id = data[0].replace(/ /g, '-');
 
 	/* ========= Audio Streaming & Playback Control ========= */
 	// Create hidden audio element for fallback streaming
@@ -485,26 +493,66 @@ const playNextTrack = (currentIndex) => {
 /* ========= Global Footer Controls Event Handlers ========= */
 // Global footer play/pause button toggles currently playing track
 footerPlayBtn.addEventListener('click', () => {
-	const audio = footerPlayBtn._linkedAudio;
-	const playBtn = footerPlayBtn._linkedPlayBtn;
-	if (!audio) return;
+  let audio = footerPlayBtn._linkedAudio;
+  let playBtn = footerPlayBtn._linkedPlayBtn;
 
-	if (audio.paused) {
-		// Pause all other tracks except this one
-		tracks.forEach(({ audio: a, btnPlay: b }) => {
-			if (a && a !== audio) {
-				a.pause();
-				b.innerHTML = playSVG;
-			}
-		});
-		audio.play();
-		playBtn.innerHTML = pauseSVG;
-		footerPlayBtn.innerHTML = pauseSVG;
-	} else {
-		audio.pause();
-		playBtn.innerHTML = playSVG;
-		footerPlayBtn.innerHTML = playSVG;
-	}
+  // If no track is currently playing, determine the current track
+  if (!audio) {
+    let currentTrackIdx = -1;
+    const hash = window.location.hash.substring(1); // Remove '#'
+
+    // Check if hash matches a track's ID
+    tracks.forEach((track, idx) => {
+      if (track.container.id === hash) {
+        currentTrackIdx = idx;
+      }
+    });
+
+    // If no hash match, use the first track
+    if (currentTrackIdx === -1 && tracks.length > 0) {
+      currentTrackIdx = 0;
+    }
+
+    if (currentTrackIdx !== -1) {
+      const { audio: selectedAudio, btnPlay: selectedBtn, container: selectedContainer } = tracks[currentTrackIdx];
+      audio = selectedAudio;
+      playBtn = selectedBtn;
+
+      // Pause all other tracks
+      tracks.forEach(({ audio: a, btnPlay: b }) => {
+        if (a && a !== audio) {
+          a.pause();
+          b.innerHTML = playSVG;
+        }
+      });
+
+      // Play the selected track
+      audio.play();
+      playBtn.innerHTML = pauseSVG;
+      footerPlayBtn.innerHTML = pauseSVG;
+
+      // Update playingIndex and footer
+      playingIndex = currentTrackIdx;
+      updateFooter(audio, playBtn, currentTrackIdx);
+    }
+  } else {
+    // Existing logic for toggling play/pause
+    if (audio.paused) {
+      tracks.forEach(({ audio: a, btnPlay: b }) => {
+        if (a && a !== audio) {
+          a.pause();
+          b.innerHTML = playSVG;
+        }
+      });
+      audio.play();
+      playBtn.innerHTML = pauseSVG;
+      footerPlayBtn.innerHTML = pauseSVG;
+    } else {
+      audio.pause();
+      playBtn.innerHTML = playSVG;
+      footerPlayBtn.innerHTML = playSVG;
+    }
+  }
 });
 
 // Volume slider input event updates all track volumes
