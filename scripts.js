@@ -477,7 +477,15 @@ const playNextTrack = (currentIndex) => {
 	updateFooter(audio, btnPlay, nextIdx);
 
 	// Scroll track element into vertical center of viewport if not fully visible
-	const bounding = container.getBoundingClientRect();
+	scrollToCenterElement(container);
+};
+
+/**
+ * Scrolls the specified element into the vertical center of the viewport
+ * @param {HTMLElement} element - The element to scroll into view
+ */
+function scrollToCenterElement(element) {
+	const bounding = element.getBoundingClientRect();
 	const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
 	const isFullyVisible = bounding.top >= 0 && bounding.bottom <= viewportHeight;
 
@@ -488,7 +496,7 @@ const playNextTrack = (currentIndex) => {
 			behavior: 'smooth'
 		});
 	}
-};
+}
 
 /* ========= Global Footer Controls Event Handlers ========= */
 // Global footer play/pause button toggles currently playing track
