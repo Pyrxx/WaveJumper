@@ -681,14 +681,40 @@ window.addEventListener('keydown', e => {
 });
 
 
+/* ========= Anchor Click Handling ========= */
+/**
+ * Prevents default anchor behavior and uses scrollToCenterElement instead.
+ * @param {Event} event - The click event on an anchor tag.
+ */
+const handleAnchorClick = (event) => {
+  const targetId = event.currentTarget.getAttribute('href').substring(1);
+  const targetElement = document.getElementById(targetId);
+
+  if (targetElement) {
+    // Prevent default anchor behavior
+    event.preventDefault();
+
+    // Update the browser's address bar with the new hash
+    history.pushState({}, '', `#${targetId}`);
+	
+	// Scroll to the element using our custom function
+    scrollToCenterElement(targetElement);
+  }
+};
+
 /* ========= Initialization & Lifecycle ========= */
 const playlistRoot = document.getElementById('playlist-container');
 
 // Create UI, track objects and append to playlist
 musicData.forEach((trackData, i) => {
-	const trackObj = createTrackElement(trackData, i);
-	tracks.push(trackObj);
-	playlistRoot.appendChild(trackObj.container);
+  const trackObj = createTrackElement(trackData, i);
+  tracks.push(trackObj);
+  playlistRoot.appendChild(trackObj.container);
+});
+
+// Add event listeners to all anchor links for custom scrolling behavior
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', handleAnchorClick);
 });
 
 // Set initial button icons
