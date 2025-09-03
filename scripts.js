@@ -476,7 +476,7 @@ const playNextTrack = (currentIndex) => {
 	playingIndex = nextIdx;
 	updateFooter(audio, btnPlay, nextIdx);
 
-	// Scroll track element into vertical center of viewport if not fully visible
+	// Scroll track element into vertical center of viewport
 	scrollToCenterElement(container);
 };
 
@@ -487,15 +487,12 @@ const playNextTrack = (currentIndex) => {
 function scrollToCenterElement(element) {
 	const bounding = element.getBoundingClientRect();
 	const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-	const isFullyVisible = bounding.top >= 0 && bounding.bottom <= viewportHeight;
-
-	if (!isFullyVisible) {
-		const scrollToY = window.scrollY + bounding.top - (viewportHeight / 2) + (bounding.height / 2);
-		window.scrollTo({
-			top: scrollToY,
-			behavior: 'smooth'
-		});
-	}
+	const scrollToY = window.scrollY + bounding.top - (viewportHeight / 2) + (bounding.height / 2);
+	
+	window.scrollTo({
+		top: scrollToY,
+		behavior: 'smooth'
+	});
 }
 
 /* ========= Global Footer Controls Event Handlers ========= */
@@ -697,7 +694,7 @@ const handleAnchorClick = (event) => {
     // Update the browser's address bar with the new hash
     history.pushState({}, '', `#${targetId}`);
 	
-	// Scroll to the element using our custom function
+	// Scroll to the element using our custom centred function
     scrollToCenterElement(targetElement);
   }
 };
