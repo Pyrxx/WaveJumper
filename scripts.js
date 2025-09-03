@@ -714,6 +714,18 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   anchor.addEventListener('click', handleAnchorClick);
 });
 
+// Handle anchor hash on page load
+window.addEventListener('load', function() {
+  const hash = window.location.hash;
+  if (hash) {
+    const elementId = hash.substring(1);
+    const element = document.getElementById(elementId);
+    if (element) {
+      scrollToCenterElement(element);
+    }
+  }
+});
+
 // Set initial button icons
 footerPlayBtn.innerHTML = playSVG;
 updateMuteButton();
