@@ -112,20 +112,24 @@ const createTrackElement = (data, idx) => {
 	coverLink.appendChild(coverImg);
 	coverContainer.appendChild(coverLink);
 
-	// 2. Info Container (flex row with 3 sections)
+	// 2. Info & Waveform Container (flex column with 2 sections)
+	const infoWaveContainer = document.createElement('div');
+	infoWaveContainer.className = 'track-info-wave-container';
+
+	// 2.1 Info Container (flex row with 3 sections)
 	const infoContainer = document.createElement('div');
 	infoContainer.className = 'track-info-container';
 
-	// 2.1 Play / Pause Button Container
+	// 2.1.1 Play / Pause Button Container
 	const playBtnContainer = document.createElement('div');
 	playBtnContainer.className = 'play-btn-container';
 	const playPauseBtn = document.createElement('button');
-	playPauseBtn.className = 'button btn-play-pause';
+	playPauseBtn.className = 'playback-button btn-play-pause';
 	playPauseBtn.setAttribute('aria-label', `Play or Pause ${data[2]} by ${data[1]}`);
 	playPauseBtn.innerHTML = playSVG;
 	playBtnContainer.appendChild(playPauseBtn);
 
-	// 2.2 Artist & Title Container (stacked)
+	// 2.1.2 Artist & Title Container (stacked)
 	const artistTitleContainer = document.createElement('div');
 	artistTitleContainer.className = 'artist-title-container';
 	const artistDiv = document.createElement('div');
@@ -137,11 +141,11 @@ const createTrackElement = (data, idx) => {
 	artistTitleContainer.appendChild(artistDiv);
 	artistTitleContainer.appendChild(titleDiv);
 
-	// 2.3 Meta Info Container - Genre & Date + Time Row
+	// 2.1.3 Meta Info Container - Genre & Date + Time Row
 	const metaContainer = document.createElement('div');
 	metaContainer.className = 'meta-info-container';
 
-	// Genre and Date Row
+	// 2.1.3.1 Genre and Date Row
 	const genreDateRow = document.createElement('div');
 	genreDateRow.className = 'genre-date-row';
 	const genreDiv = document.createElement('div');
@@ -153,7 +157,7 @@ const createTrackElement = (data, idx) => {
 	genreDateRow.appendChild(genreDiv);
 	genreDateRow.appendChild(dateDiv);
 
-	// Time Row: current play time | separator | duration
+	// 2.1.3.2 Time Row: current play time | separator | duration
 	const timeRow = document.createElement('div');
 	timeRow.className = 'time-row';
 	const playPosDiv = document.createElement('div');
@@ -177,7 +181,7 @@ const createTrackElement = (data, idx) => {
 	infoContainer.appendChild(artistTitleContainer);
 	infoContainer.appendChild(metaContainer);
 
-	// 3. Waveform Container - canvas for visualization
+	// 2.2 Waveform Container - canvas for visualization
 	const waveformContainer = document.createElement('div');
 	waveformContainer.className = 'waveform-container';
 	const waveformCanvas = document.createElement('canvas');
@@ -185,7 +189,11 @@ const createTrackElement = (data, idx) => {
 	waveformCanvas.height = 110;
 	waveformContainer.appendChild(waveformCanvas);
 
-	// 4. Details Toggle Container - content from id3 comments, e.g. a tracklist
+	// Append all 2 info wave subcontainers
+	infoWaveContainer.appendChild(infoContainer);
+	infoWaveContainer.appendChild(waveformContainer);
+
+	// 3. Details Toggle Container - content from id3 comments, e.g. a tracklist
 	const detailsContainer = document.createElement('div');
 	detailsContainer.className = 'details-container';
 	let toggleBtn = null;
@@ -211,8 +219,7 @@ const createTrackElement = (data, idx) => {
 
 	// Append all main containers into track item
 	trackElem.appendChild(coverContainer);
-	trackElem.appendChild(infoContainer);
-	trackElem.appendChild(waveformContainer);
+	trackElem.appendChild(infoWaveContainer);
 	if (detailsContainer.childNodes.length > 0) {
 		trackElem.appendChild(detailsContainer);
 	}
@@ -220,7 +227,7 @@ const createTrackElement = (data, idx) => {
 	trackElem.id = data[0].replace(/ /g, '-');
 
 	/* ========= Audio Streaming & Playback Control ========= */
-	// Create hidden audio element for fallback streaming
+	// Create hidden audio element for streaming
 	const audioElement = document.createElement('audio');
 	audioElement.src = `music/${data[0]}`;
 	audioElement.preload = 'metadata';
@@ -326,6 +333,16 @@ const createTrackElement = (data, idx) => {
 		drawWaveform(ctx, ampData, ratio, currentCanvasWidth, height);
 	});
 
+	// Hovering waveform adds class to playPosDiv
+	waveformCanvas.addEventListener('mouseover', e => {
+		playPosDiv.classList.add("play-pos-wave-hover");
+	});
+	
+	// Leaving waveform removes class to playPosDiv
+	waveformCanvas.addEventListener('mouseleave', e => {
+		playPosDiv.classList.remove("play-pos-wave-hover");
+	});
+	
 	// Hovering waveform shows hover time, highlights bar
 	waveformCanvas.addEventListener('mousemove', e => {
 		mouseHovering = true;
@@ -388,12 +405,12 @@ let isMuted = false;
 let prevVolume = 1;
 
 // Select DOM elements
-const footerPlayBtn = document.querySelector('#footer-controls .btn-play-pause');
-const footerPrevBtn = document.querySelector('#footer-controls .btn-prev');
-const footerNextBtn = document.querySelector('#footer-controls .btn-next');
-const footerMuteBtn = document.querySelector('#footer-controls .btn-mute');
-const footerVolumeInput = document.querySelector('#footer-controls input[type="range"]');
-const volumePercentSpan = document.querySelector('#footer-controls #volume-percent');
+const footerPlayBtn = document.querySelector('#btn-play-pause');
+const footerPrevBtn = document.querySelector('#btn-prev');
+const footerNextBtn = document.querySelector('#btn-next');
+const footerMuteBtn = document.querySelector('#btn-mute');
+const footerVolumeInput = document.querySelector('#volume-slider');
+const volumePercentSpan = document.querySelector('#volume-percent');
 
 /**
  * Updates the mute button icon based on current mute state
@@ -452,7 +469,7 @@ const updateVolumeBar = (volume) => {
 /**
  * Plays the next track in the playlist, if any.
  * Pauses all other tracks.
- * Scrolls the new track into vertical center view if not fully visible.
+ * Scrolls the new track into vertical center view.
  * @param {number} currentIndex - index of the track that just ended.
  */
 const playNextTrack = (currentIndex) => {

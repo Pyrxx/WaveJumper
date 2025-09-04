@@ -13,14 +13,14 @@
   <div id="footer-controls" aria-label="Global audio controls">
     <div class="footer-inner-container">
       <!-- Prev button -->
-      <button class="button btn-prev" aria-label="Previous track" title="Previous track"></button>
+      <button id="btn-prev" class="playback-button" aria-label="Previous track" title="Previous track"></button>
       <!-- Play/Pause button -->
-      <button class="button btn-play-pause" aria-label="Play/Pause global audio player" title="Play/Pause global audio player"></button>
+      <button id="btn-play-pause" class="playback-button" aria-label="Play/Pause global audio player" title="Play/Pause global audio player"></button>
       <!-- Next button -->
-      <button class="button btn-next" aria-label="Next track" title="Next track"></button>
+      <button id="btn-next" class="playback-button" aria-label="Next track" title="Next track"></button>
       <!-- Volume control with mute icon and percentage display -->
-      <div class="volume-controls">
-        <button class="btn-mute" aria-label="Mute/Unmute volume" title="Mute/Unmute volume"></button>
+      <div id="volume-controls">
+        <button id="btn-mute" aria-label="Mute/Unmute volume" title="Mute/Unmute volume"></button>
         <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="1" aria-label="Volume control" />
         <span id="volume-percent" class="volume-percent">100%</span>
       </div>

@@ -2,7 +2,7 @@
 	CSS Reset (Eric Meyer v2.0 adapted)
 	----------------------------------------------------------------------------
 	Neutralizes default browser styles for consistency across browsers.
-	Source: [https://meyerweb.com/eric/tools/css/reset/](https://meyerweb.com/eric/tools/css/reset/)
+	Source: https://meyerweb.com/eric/tools/css/reset/
 	========================================================================== */
 html, body, div, span, applet, object, iframe,
 h1, h2, h3, h4, h5, h6, p, blockquote, pre,
@@ -30,9 +30,75 @@ article, aside, details, figcaption, figure,
 footer, header, hgroup, menu, nav, section {
 	display: block;
 }
+
+@font-face {
+    font-family: 'WoffRoboto';
+    src: url('./fonts/Roboto-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'WoffRoboto';
+    src: url('./fonts/Roboto-Bold.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'WoffRobotoCondensed';
+    src: url('./fonts/RobotoCondensed-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'WoffRobotoCondensed';
+    src: url('./fonts/RobotoCondensed-Bold.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+}
+
+/* ==========================================================================
+	Theme Variables & Auto Dark Mode by System Preference
+	----------------------------------------------------------------------------
+	Define base variables; auto switch for light/dark mode via @media (prefers-color-scheme).
+	Benefits: cleaner code, easy theming, no JS needed for theme detection.
+	========================================================================== */
+:root {
+	/* Colors */
+	--background: #cbd0d6;
+	--text-color-bright: #12191d;
+	--highlight-muted: #01bbbe;
+	--background-alt: oklch(from var(--background) calc(l + 0.05) c h);
+	--text-color-muted: oklch(from var(--text-color-bright) calc(l + 0.25) c h);
+	--highlight-bright: oklch(from var(--highlight-muted) calc(l + 0.05) c h);
+	--highlight-alt: oklch(from var(--highlight-muted) calc(l - 0.20) calc(l + 0.20) h);
+	--background-transparent: hsl(from var(--background) h s l / 0.85);
+	--playback-button-svg-fill: var(--text-color-bright);
+	/* Spacing & sizing */
+	--content-width: 460px;
+	--btn-size: 38px;
+	/* Transitions */
+	--transition-default: 0.3s ease;
+}
+@media (prefers-color-scheme: dark) {
+	:root {
+		--background: #12191d;
+		--text-color-bright: #f0f0f0;
+		--highlight-muted: #b9bb30;
+		--text-color-muted: oklch(from var(--text-color-bright) calc(l - 0.25) c h);
+		--highlight-bright: oklch(from var(--highlight-muted) calc(l + 0.10) c h);
+		--playback-button-svg-fill: var(--background);
+	}
+}
+
+html {
+	font-family: WoffRoboto;
+}
+
 body {
 	line-height: 1;
-	font-family: var(--system-ui);
 	font-size: 16px;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
@@ -55,40 +121,11 @@ table {
 	border-spacing: 0;
 }
 /* ==========================================================================
-	Theme Variables & Auto Dark Mode by System Preference
-	----------------------------------------------------------------------------
-	Define base variables; auto switch for light/dark mode via @media (prefers-color-scheme).
-	Benefits: cleaner code, easy theming, no JS needed for theme detection.
-	========================================================================== */
-:root {
-	--system-ui: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-	/* Colors */
-	--background: #a8b5c2;
-	--text-color-bright: #12191d;
-	--highlight-muted: #fbff00;
-	--background-alt: oklch(from var(--background) calc(l + 0.05) c h);
-	--text-color-muted: oklch(from var(--text-color-bright) calc(l - 0.15) c h);
-	--highlight-bright: oklch(from var(--highlight-muted) calc(l + 0.10) c h);
-	--highlight-alt: oklch(from var(--highlight-muted) calc(l - 0.20) calc(l + 0.20) h);
-	/* Spacing & sizing */
-	--content-width: 460px;
-	--btn-size: 38px;
-	/* Transitions */
-	--transition-default: 0.3s ease;
-}
-@media (prefers-color-scheme: dark) {
-	:root {
-		--background: #12191d;
-		--text-color-bright: #f0f0f0;
-		--highlight-muted: #b9bb30;
-	}
-}
-/* ==========================================================================
 	Layout & Core Components
 	========================================================================== */
 .content {
 	width: var(--content-width);
-	margin: 0 auto 32px auto;
+	margin: 0;
 	box-sizing: border-box;
 	user-select: none;
 	display: flex;
@@ -114,7 +151,7 @@ table {
 }
 .track-cover-container {
 	width: 100%;
-	margin-bottom: 8px;
+	margin-bottom: 10px;
 }
 .track-cover-container img {
 	width: 100%;
@@ -124,21 +161,27 @@ table {
 	user-select: none;
 	pointer-events: none;
 }
+.track-info-wave-container {
+    width: 440px;
+    margin-top: -188px;
+    padding: 10px;
+	background-color: var(--background-transparent);
+}
 .track-info-container {
 	width: 100%;
+	height: var(--btn-size);
 	display: flex;
 	justify-content: space-between;
 	align-items: flex-start;
 	box-sizing: border-box;
-	margin-bottom: 8px;
-	position: relative;
+	margin-bottom: 10px;
 }
 .play-btn-container {
 	flex: 0 0 auto;
 	margin: 0;
 	padding: 0;
 }
-.btn-play-pause {
+.playback-button {
 	background: var(--highlight-muted);
 	color: var(--background);
 	border: none;
@@ -157,7 +200,7 @@ table {
 	font-size: 1rem;
 	transition: background-color var(--transition-default);
 }
-.button:hover,
+.playback-button:hover,
 #volume-slider:hover {
 	background: var(--highlight-bright);
 	outline-offset: 1px;
@@ -174,7 +217,7 @@ table {
 	user-select: none;
 }
 .track-artist {
-	font-weight: 400;
+	font-weight: normal;
 	font-size: 1rem;
 	white-space: nowrap;
 	overflow: hidden;
@@ -183,7 +226,7 @@ table {
 	color: var(--text-color-muted);
 }
 .track-title {
-	font-weight: 700;
+	font-weight: bold;
 	font-size: 1.2rem;
 	line-height: 1.1;
 	white-space: nowrap;
@@ -200,46 +243,53 @@ table {
 	justify-content: space-between;
 	align-items: flex-end;
 	user-select: none;
-	max-height: 100%;
+	height: 100%;
 	box-sizing: border-box;
 }
 .genre-date-row {
 	display: flex;
 	gap: 12px;
-	font-weight: 300;
+	font-weight: normal;
 	font-size: 0.9rem;
 	white-space: nowrap;
 	color: var(--text-color-muted);
 }
+.track-date {
+	background: var(--text-color-muted);
+	color: var(--background);
+	border-radius: 6px;
+	padding: 0 4px;
+	font-size: 0.8rem;
+}
 .time-row {
-	font-family: monospace;
-	letter-spacing: 0.04em;
 	min-width: 138px;
 	justify-content: flex-end;
 	color: var(--text-color-muted);
-	font-weight: 300;
+	font-weight: normal;
 	font-size: 0.9rem;
 	margin-top: auto;
 	display: flex;
-	gap: 6px;
+	gap: 3px;
 	white-space: nowrap;
 	align-items: center;
+	align-self: flex-end;
 }
 .time-row .separator {
 	user-select: none;
+}
+.play-pos-wave-hover {
+	color: var(--highlight-muted);
 }
 .waveform-container {
 	width: 100%;
 	margin-bottom: 8px;
 	user-select: none;
-	border-radius: 8px;
 	overflow: hidden;
 }
 canvas.waveform-canvas {
 	height: 110px;
 	display: block;
 	cursor: pointer;
-	border-radius: 8px;
 	background: transparent;
 }
 .details-container {
@@ -252,7 +302,7 @@ canvas.waveform-canvas {
 	border: none;
 	cursor: pointer;
 	color: var(--text-color-muted);
-	font-weight: 300;
+	font-weight: normal;
 	font-size: 0.9rem;
 	display: flex;
 	align-items: center;
@@ -272,6 +322,7 @@ canvas.waveform-canvas {
 	transform: rotate(-180deg);
 }
 .details-content {
+	font-family: WoffRobotoCondensed;
 	font-size: 0.9rem;
 	display: none;
 	margin-top: 8px;
@@ -306,33 +357,18 @@ canvas.waveform-canvas {
 	align-items: center;
 	justify-content: center;
 }
-#footer-controls .btn-play-pause, #footer-controls .btn-prev, #footer-controls .btn-next {
-	padding: 0;
+#footer-controls .playback-button {
 	margin-right: 10px;
-	font-size: 1.1rem;
-	min-width: var(--btn-size);
-	cursor: pointer;
-	background: var(--highlight-muted);
-	border: none;
-	border-radius: 4px;
-	color: var(--background);
-	user-select: none;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: var(--btn-size);
-	height: var(--btn-size);
-	transition: background-color var(--transition-default);
 }
 
 /* Volume controls styling */
-#footer-controls .volume-controls {
+#volume-controls {
 	margin-left: 20px;
 	display: flex;
 	align-items: center;
 }
 
-#footer-controls .btn-mute {
+#btn-mute {
 	background: transparent;
 	border: none;
 	cursor: pointer;
@@ -344,14 +380,14 @@ canvas.waveform-canvas {
 	transition: color var(--transition-default);
 }
 
-#footer-controls .volume-percent {
+#volume-percent {
 	font-size: 0.9rem;
 	white-space: nowrap;
 	min-width: 45px;
 	text-align: right;
 	color: var(--text-color-muted);
 }
-#footer-controls input[type=range] {
+#volume-slider {
 	width: 120px;
 	cursor: pointer;
 	appearance: none;
@@ -364,14 +400,14 @@ canvas.waveform-canvas {
 	--vol-percent: 100%;
 	transition: background var(--transition-default);
 }
-#footer-controls input[type=range]::-webkit-slider-runnable-track {
+#volume-slider::-webkit-slider-runnable-track {
 	height: 20px;
 	background: linear-gradient(to right,
 	var(--highlight-muted) 0%, var(--highlight-muted) var(--vol-percent),
 	var(--background) var(--vol-percent), var(--background) 100%);
 	border-radius: 5px;
 }
-#footer-controls input[type=range]::-moz-range-track {
+#volume-slider::-moz-range-track {
 	height: 20px;
 	background: linear-gradient(to right,
 	var(--highlight-muted) 0%, var(--highlight-muted) var(--vol-percent),
@@ -380,7 +416,7 @@ canvas.waveform-canvas {
 	border: none;
 }
 /* Hide slider thumb/knob */
-#footer-controls input[type=range]::-webkit-slider-thumb {
+#volume-slider::-webkit-slider-thumb {
 	-webkit-appearance: none;
 	appearance: none;
 	width: 0;
@@ -389,7 +425,7 @@ canvas.waveform-canvas {
 	background: transparent;
 	cursor: pointer;
 }
-#footer-controls input[type=range]::-moz-range-thumb {
+#volume-slider::-moz-range-thumb {
 	width: 0;
 	height: 0;
 	border: none;
@@ -403,7 +439,7 @@ svg.play-icon, svg.pause-icon, svg.prev-icon, svg.next-icon, svg.mute-icon, svg.
 	display: block;
 }
 svg.play-icon, svg.pause-icon, svg.prev-icon, svg.next-icon {
-	fill: var(--background);
+	fill: var(--playback-button-svg-fill);
 	stroke: transparent;
 }
 svg.mute-icon, svg.unmute-icon {
