@@ -281,22 +281,8 @@ const createTrackElement = (data, idx) => {
 
 	updateCanvasWidthAndDraw();
 
-	/* ========= Playback Progress Updates & Waveform Interaction ========= */
-	// State vars to handle waveform interaction
-	let mouseHovering = false;
-	let hoverIndex = -1;
 
-	// Update waveform, time display as audio plays (unless hovering)
-	audioElement.addEventListener('timeupdate', () => {
-		if (!mouseHovering) {
-			const current = audioElement.currentTime;
-			const dur = audioElement.duration || duration;
-			const prog = dur ? current / dur : 0;
-			drawWaveform(ctx, ampData, prog, currentCanvasWidth, height);
-			playPosDiv.textContent = formatTime(current);
-			durDiv.textContent = formatTime(dur);
-		}
-	});
+	/* ========= Playback Progress Updates & Waveform Interaction ========= */
 
 	// On track end, reset UI and play next track
 	audioElement.addEventListener('ended', () => {
@@ -330,50 +316,187 @@ const createTrackElement = (data, idx) => {
 		}
 	});
 
-	// Clicking waveform seeks playback position
-	waveformCanvas.addEventListener('click', e => {
-		const rect = waveformCanvas.getBoundingClientRect();
-		const ratio = (e.clientX - rect.left) / rect.width;
-		const dur = audioElement.duration || duration;
-		audioElement.currentTime = ratio * dur;
-		drawWaveform(ctx, ampData, ratio, currentCanvasWidth, height);
-	});
+	// Unified state for mouse/touch/pen waveform interaction (via Pointer Events)
+	let isHovering = false;
+	let hoverIndex = -1;
+	let isPointerDown = false;
 
-	// Hovering waveform adds class to playPosDiv
-	waveformCanvas.addEventListener('mouseover', e => {
+	// Ensure touch interactions are handled by the app (no browser panning/zooming)
+	if (waveformCanvas && waveformCanvas.style) {
+	waveformCanvas.style.touchAction = 'none';
+	}
+
+	// Shared helpers
+	const clamp01 = v => Math.min(Math.max(v, 0), 1);
+
+	function getRatioFromClientX(clientX) {
+	const rect = waveformCanvas.getBoundingClientRect();
+	if (!rect.width) return 0;
+	return clamp01((clientX - rect.left) / rect.width);
+	}
+
+	function getRatioFromEvent(ev) {
+	// PointerEvent has clientX across mouse/touch/pen
+	return getRatioFromClientX(ev.clientX);
+	}
+
+	function getHoverIndexFromRatio(ratio) {
+	if (!ampData || !ampData.length) return -1;
+	const idx = Math.floor(ratio * ampData.length);
+	return Math.min(Math.max(idx, 0), ampData.length - 1);
+	}
+
+	function getDuration() {
+	// Fallback to provided 'duration' if audioElement.duration is not yet available
+	return audioElement.duration || duration || 0;
+	}
+
+	function getProgressRatio() {
+	const dur = getDuration();
+	return dur ? (audioElement.currentTime / dur) : 0;
+	}
+
+	function setCurrentTimeFromRatio(ratio) {
+	const dur = getDuration();
+	audioElement.currentTime = ratio * dur;
+	}
+
+	function setHoverUI(showHover) {
+	// Toggle hover class on time element, matching original behavior
+	if (showHover) {
 		playPosDiv.classList.add("play-pos-wave-hover");
-	});
-	
-	// Leaving waveform removes class to playPosDiv
-	waveformCanvas.addEventListener('mouseleave', e => {
+	} else {
 		playPosDiv.classList.remove("play-pos-wave-hover");
-	});
-	
-	// Hovering waveform shows hover time, highlights bar
-	waveformCanvas.addEventListener('mousemove', e => {
-		mouseHovering = true;
-		const rect = waveformCanvas.getBoundingClientRect();
-		const x = e.clientX - rect.left;
-		const ratio = x / rect.width;
-		hoverIndex = Math.min(Math.max(Math.floor(ratio * ampData.length), 0), ampData.length - 1);
-		const dur = audioElement.duration || duration;
-		playPosDiv.textContent = formatTime(ratio * dur);
+	}
+	}
+
+	function renderWave({ progressRatio, hoverIdx = -1, showHover = false }) {
+	drawWaveform(ctx, ampData, progressRatio, currentCanvasWidth, height, hoverIdx, showHover);
+	}
+
+	function updateTimeDisplay(showHover, ratioForHover = null) {
+	const dur = getDuration();
+	const cur = audioElement.currentTime;
+	// When hovering (or touching), show the hover time; otherwise show current play position
+	const timeToShow = showHover && ratioForHover != null ? (ratioForHover * dur) : cur;
+	playPosDiv.textContent = formatTime(timeToShow);
+	durDiv.textContent = formatTime(dur);
+	setHoverUI(showHover);
+	}
+
+	function updateHoverFromEvent(ev, seeking = false) {
+	const ratio = getRatioFromEvent(ev);
+	const dur = getDuration();
+
+	// Update hover index and UI for both mouse hover and touch contact
+	hoverIndex = getHoverIndexFromRatio(ratio);
+	isHovering = true;
+
+	if (seeking) {
+		// While pointer is down, this acts like scrubbing/seek
+		setCurrentTimeFromRatio(ratio);
+	}
+
+	const progressRatio = seeking ? ratio : getProgressRatio();
+	renderWave({ progressRatio, hoverIdx: hoverIndex, showHover: true });
+	updateTimeDisplay(true, ratio);
+
+	return { ratio, dur };
+	}
+
+	function clearHover() {
+	isHovering = false;
+	hoverIndex = -1;
+	const dur = getDuration();
+	const cur = audioElement.currentTime;
+	const progressRatio = dur ? (cur / dur) : 0;
+
+	renderWave({ progressRatio, hoverIdx: -1, showHover: false });
+	updateTimeDisplay(false, null);
+	}
+
+	// Update waveform and time display as audio plays (unless hovering)
+	audioElement.addEventListener('timeupdate', () => {
+	if (!isHovering) {
+		const cur = audioElement.currentTime;
+		const dur = getDuration();
+		const prog = dur ? cur / dur : 0;
+		renderWave({ progressRatio: prog, hoverIdx: -1, showHover: false });
+		playPosDiv.textContent = formatTime(cur);
 		durDiv.textContent = formatTime(dur);
-		const prog = audioElement.currentTime / dur;
-		drawWaveform(ctx, ampData, prog, currentCanvasWidth, height, hoverIndex, true);
+	}
 	});
 
+	// Pointer Events: unify mouse/touch/pen for seeking and hover-like feedback
+
+	function onPointerDown(ev) {
+	// Prevent default to avoid text selection or native scrolling during interaction
+	ev.preventDefault();
+
+	isPointerDown = true;
+	isHovering = true;
+
+	// Ensure we continue receiving move/up even if the pointer leaves the canvas
+	try {
+		waveformCanvas.setPointerCapture(ev.pointerId);
+	} catch {}
+
+	updateHoverFromEvent(ev, true);
+	}
+
+	function onPointerMove(ev) {
+	// If pointer is down, we scrub/seek; if it's a mouse with hover support, show hover feedback
+	const supportsHover = ev.pointerType === 'mouse';
+	if (isPointerDown) {
+		// Prevent default while scrubbing to avoid browser-native behaviors
+		ev.preventDefault();
+		updateHoverFromEvent(ev, true);
+	} else if (supportsHover) {
+		updateHoverFromEvent(ev, false);
+	}
+	}
+
+	function onPointerUp(ev) {
+	// End seeking; keep hover only for mouse pointers that support hover
+	isPointerDown = false;
+	const supportsHover = ev.pointerType === 'mouse';
+
+	// Release capture if it was set
+	try {
+		waveformCanvas.releasePointerCapture(ev.pointerId);
+	} catch {}
+
+	if (supportsHover) {
+		// Update hover position one last time without seeking
+		updateHoverFromEvent(ev, false);
+	} else {
+		// Touch/pen: clear hover and show current playback
+		clearHover();
+	}
+	}
+
+	function onPointerLeave() {
 	// Leaving waveform resets to current playback time display & bar
-	waveformCanvas.addEventListener('mouseleave', () => {
-		mouseHovering = false;
-		hoverIndex = -1;
-		const dur = audioElement.duration || duration;
-		const curTime = audioElement.currentTime;
-		const prog = dur ? curTime / dur : 0;
-		drawWaveform(ctx, ampData, prog, currentCanvasWidth, height);
-		playPosDiv.textContent = formatTime(curTime);
-		durDiv.textContent = formatTime(dur);
-	});
+	if (!isPointerDown) {
+		clearHover();
+	}
+	}
+
+	function onPointerCancel() {
+	// Cancel behaves like an aborted interaction: stop seeking and reset UI
+	isPointerDown = false;
+	clearHover();
+	}
+
+	// Register unified listeners (passive: false where preventDefault is used)
+	waveformCanvas.addEventListener('pointerdown', onPointerDown, { passive: false });
+	waveformCanvas.addEventListener('pointermove', onPointerMove, { passive: false });
+	waveformCanvas.addEventListener('pointerup', onPointerUp);
+	waveformCanvas.addEventListener('pointerleave', onPointerLeave);
+	waveformCanvas.addEventListener('pointercancel', onPointerCancel);
+
+
+	/* ========= Waveform Container Resizing ========= */
 
 	// Observe width changes of waveform container and update canvas accordingly
 	const resizeObserver = new ResizeObserver(() => {
