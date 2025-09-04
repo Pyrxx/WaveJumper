@@ -8,14 +8,20 @@ const unmuteSVG = `<svg class="mute-icon" width="24" height="24" viewBox="0 0 24
 
 /* ========= Accessibility & UX ========= */
 /**
- * Formats seconds to mm:ss string
+ * Formats seconds to h:mm:ss string
  * Returns '0:00' if input falsy.
  */
-const formatTime = (seconds) => {
-	if (!seconds) return '0:00';
-	const m = Math.floor(seconds / 60);
-	const s = Math.floor(seconds % 60);
-	return `${m}:${s < 10 ? '0' : ''}${s}`;
+const formatTime = (seconds, showHours = false) => {
+    if (!seconds) return '0:00';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+
+    if (showHours || h > 0) {
+        return `${h}:${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+    } else {
+        return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
 };
 
 /* ========= Waveform Drawing ========= */
