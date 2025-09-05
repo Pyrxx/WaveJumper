@@ -14,7 +14,7 @@ from PIL import Image
 
 # Configure logging to write errors to update_db.err
 logging.basicConfig(
-    filename='update.err',
+    filename='analyze_files.err',
     level=logging.ERROR,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )

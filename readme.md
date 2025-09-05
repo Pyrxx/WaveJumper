@@ -20,8 +20,8 @@ A web-based music player with interactive waveform visualization. This project a
 ├── index.html           # Main HTML file
 ├── styles.css           # CSS styles
 ├── scripts.js           # JavaScript for UI and playback controls
-├── music.js             # Generated JS file with track data (created by update.py)
-└── update.py            # Python script to process audio files and generate music.js
+├── music.js             # Generated JS file with track data (created by analyze_files.py)
+└── analyze_files.py     # Python script to process audio files and generate music.js
 ```
 
 ## Setup Instructions
@@ -45,10 +45,10 @@ pip install librosa numpy pillow mutagen
 
 ### Generating Track Data
 
-Place your M4A audio files in the `music/` directory. Then run the update script:
+Place your M4A audio files in the `music/` directory. Then run the python script:
 
 ```bash
-python update.py
+python analyze_files.py
 ```
 
 This will generate a `music.js` file containing metadata and amplitude data for all tracks in the music folder.
@@ -59,7 +59,7 @@ Open `index.html` in your web browser to launch the player interface.
 
 ## How It Works
 
-1. The Python script (`update.py`) processes audio files, extracts metadata, calculates waveform amplitude data, and generates a JavaScript file (`music.js`) containing this information.
+1. The Python script (`analyze_files.py`) processes audio files, extracts metadata, calculates waveform amplitude data, and generates a JavaScript file (`music.js`) containing this information.
 2. The HTML file (`index.html`) sets up the page structure and includes references to CSS and JS files.
 3. The CSS file (`styles.css`) styles the UI components and supports dark mode.
 4. The JavaScript file (`scripts.js`) handles all interactive functionality:
