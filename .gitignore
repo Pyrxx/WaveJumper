@@ -1,4 +1,5 @@
 /dump
 /music/*.m4a
 /music.js
-/update.err
+/analyze_files.err
+/music_limited.js
