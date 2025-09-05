@@ -317,6 +317,7 @@ const createTrackElement = (data, idx) => {
 			playPauseBtn.innerHTML = pauseSVG;
 			playingIndex = idx;
 			updateFooter(audioElement, playPauseBtn, idx);
+			scrollToCenterElement(trackElem);
 		} else {
 			audioElement.pause();
 			playPauseBtn.innerHTML = playSVG;
@@ -576,24 +577,31 @@ const updateVolumePercent = (volume) => {
  * @param {number} idx - current track index or -1 if none.
  */
 const updateFooter = (audio, playBtn, idx) => {
-	if (audio || playBtn) {
-		const paused = audio ? audio.paused : playBtn.innerHTML === playSVG;
-		footerPlayBtn.innerHTML = paused ? playSVG : pauseSVG;
-		footerPlayBtn.disabled = false;
-		footerPlayBtn._linkedAudio = audio;
-		footerPlayBtn._linkedPlayBtn = playBtn;
-		footerPlayBtn._linkedIndex = idx;
-		if (audio) footerVolumeInput.value = audio.volume;
-		updateVolumeBar(audio ? audio.volume : 1);
-	} else {
-		footerPlayBtn.innerHTML = playSVG;
-		footerPlayBtn.disabled = true;
-		footerPlayBtn._linkedAudio = null;
-		footerPlayBtn._linkedPlayBtn = null;
-		footerPlayBtn._linkedIndex = -1;
-		updateVolumeBar(1);
-	}
+  // Try to backfill from idx when one side is missing
+  if ((audio || playBtn) && Number.isInteger(idx) && tracks[idx]) {
+    if (!audio) audio = tracks[idx].audio;
+    if (!playBtn) playBtn = tracks[idx].btnPlay;
+  }
+
+  if (audio || playBtn) {
+    const paused = audio ? audio.paused : playBtn.innerHTML === playSVG;
+    footerPlayBtn.innerHTML = paused ? playSVG : pauseSVG;
+    footerPlayBtn.disabled = false;
+    footerPlayBtn._linkedAudio = audio || null;
+    footerPlayBtn._linkedPlayBtn = playBtn || null;
+    footerPlayBtn._linkedIndex = Number.isInteger(idx) ? idx : -1;
+    if (audio) footerVolumeInput.value = audio.volume;
+    updateVolumeBar(audio ? audio.volume : 1);
+  } else {
+    footerPlayBtn.innerHTML = playSVG;
+    footerPlayBtn.disabled = true;
+    footerPlayBtn._linkedAudio = null;
+    footerPlayBtn._linkedPlayBtn = null;
+    footerPlayBtn._linkedIndex = -1;
+    updateVolumeBar(1);
+  }
 };
+
 
 /**
  * Updates the CSS variable controlling volume slider's filled track
@@ -650,6 +658,67 @@ function scrollToCenterElement(element) {
 	});
 }
 
+function toggleFooterPlay() {
+  // Resolve links if missing
+  let audio = footerPlayBtn._linkedAudio;
+  let playBtn = footerPlayBtn._linkedPlayBtn;
+  let idx = Number.isInteger(footerPlayBtn._linkedIndex) ? footerPlayBtn._linkedIndex : -1;
+
+  if (!audio) {
+    if (playingIndex !== -1) {
+      idx = playingIndex;
+    } else {
+      const hashId = (window.location.hash || '').slice(1);
+      idx = tracks.findIndex(t => t.container.id === hashId);
+      if (idx < 0) idx = 0;
+    }
+    const target = tracks[idx];
+    if (!target) return;
+    audio = target.audio;
+    playBtn = target.btnPlay;
+    updateFooter(audio, playBtn, idx);
+  }
+
+  const wasPaused = audio.paused;
+
+  // Pause others and reset their icons
+  tracks.forEach(({ audio: a, btnPlay: b }) => {
+    if (a && a !== audio) {
+      a.pause();
+      if (b) b.innerHTML = playSVG;
+    }
+  });
+
+  if (wasPaused) {
+    audio.play();
+    if (playBtn) playBtn.innerHTML = pauseSVG;
+    footerPlayBtn.innerHTML = pauseSVG;
+    playingIndex = Number.isInteger(idx) ? idx : playingIndex;
+
+    // Sync hash/scroll with active track
+    const id = tracks[playingIndex]?.container?.id;
+    if (id && window.location.hash.slice(1) !== id) {
+      history.pushState({}, '', `#${id}`);
+    }
+    if (tracks[playingIndex]?.container) {
+      scrollToCenterElement(tracks[playingIndex].container);
+    }
+
+    // Update media session state (optional but recommended)
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = 'playing';
+    }
+  } else {
+    audio.pause();
+    if (playBtn) playBtn.innerHTML = playSVG;
+    footerPlayBtn.innerHTML = playSVG;
+
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = 'paused';
+    }
+  }
+}
+
 /* ========= Global Footer Controls Event Handlers ========= */
 
 // Volume slider input event updates all track volumes
@@ -701,39 +770,22 @@ footerVolumeInput.addEventListener('wheel', e => {
 /* ========= Media Session & Keyboard Shortcut Handlers ========= */
 // Setup media session if available
 if ('mediaSession' in navigator) {
-	const mediaSession = navigator.mediaSession;
-
-	// Define action handlers for media keys
-	mediaSession.setActionHandler('play', () => {
-		if (footerPlayBtn._linkedAudio && footerPlayBtn._linkedAudio.paused) {
-			footerPlayBtn.click();
-		}
-	});
-
-	mediaSession.setActionHandler('pause', () => {
-		if (footerPlayBtn._linkedAudio && !footerPlayBtn._linkedAudio.paused) {
-			footerPlayBtn.click();
-		}
-	});
-
-	mediaSession.setActionHandler('previoustrack', () => {
-		if (playingIndex !== -1) {
-			footerPrevBtn.click();
-		}
-	});
-
-	mediaSession.setActionHandler('nexttrack', () => {
-		if (playingIndex !== -1) {
-			footerNextBtn.click();
-		}
-	});
+  const mediaSession = navigator.mediaSession;
+  mediaSession.setActionHandler('play', toggleFooterPlay);
+  mediaSession.setActionHandler('pause', toggleFooterPlay);
+  mediaSession.setActionHandler('previoustrack', () => {
+    if (playingIndex !== -1) footerPrevBtn.click();
+  });
+  mediaSession.setActionHandler('nexttrack', () => {
+    if (playingIndex !== -1) footerNextBtn.click();
+  });
 }
 
 // Keyboard shortcuts for playback control
 window.addEventListener('keydown', e => {
 	if (e.code === 'Space') {
 		e.preventDefault();
-		footerPlayBtn.click();
+		toggleFooterPlay();
 	} else if (e.code === 'ArrowDown' || e.code === 'ArrowUp') {
 		if (playingIndex === -1) return;
 		e.preventDefault();
@@ -835,29 +887,7 @@ updateVolumeBar(1);
 updateVolumePercent(1);
 
 // Event handler for footer play/pause track button
-footerPlayBtn.addEventListener('click', () => {
-	const audio = footerPlayBtn._linkedAudio;
-	const playBtn = footerPlayBtn._linkedPlayBtn;
-	if (!audio) return;
-
-	if (audio.paused) {
-		// Pause all other tracks except this one
-		tracks.forEach(({ audio: a, btnPlay: b }) => {
-			if (a && a !== audio) {
-				a.pause();
-				b.innerHTML = playSVG;
-			}
-		});
-		audio.play();
-		playBtn.innerHTML = pauseSVG;
-		footerPlayBtn.innerHTML = pauseSVG;
-	} else {
-		audio.pause();
-		playBtn.innerHTML = playSVG;
-		footerPlayBtn.innerHTML = playSVG;
-	}
-});
-
+footerPlayBtn.addEventListener('click', toggleFooterPlay);
 
 // Event handler for previous track button
 footerPrevBtn.addEventListener('click', () => {
