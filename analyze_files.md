@@ -1,4 +1,4 @@
-# update.py Summary
+# analyze_files.py Summary
 
 ## Functionality
 - The script scans the target directory for audio files with a .m4a extension.
