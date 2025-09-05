@@ -6,3 +6,5 @@
 - settings, hints, theme switcher in `index.html`
 - in `update.py` ensure only changed and new tracks are getting analyzed
 - add hh to duration
+- disable duration text update. lower update interval for play position text.
+- rework footer controls
