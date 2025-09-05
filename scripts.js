@@ -229,10 +229,10 @@ const createTrackElement = (data, idx) => {
 	if (detailsContainer.childNodes.length > 0) {
 		trackElem.appendChild(detailsContainer);
 	}
+	
 	// Set unique ID for track element based on filename
 	trackElem.id = data[0].replace(/ /g, '-');
 
-	/* ========= Audio Streaming & Playback Control ========= */
 	// Create hidden audio element for streaming
 	const audioElement = document.createElement('audio');
 	audioElement.src = `music/${data[0]}`;
@@ -651,69 +651,6 @@ function scrollToCenterElement(element) {
 }
 
 /* ========= Global Footer Controls Event Handlers ========= */
-// Global footer play/pause button toggles currently playing track
-footerPlayBtn.addEventListener('click', () => {
-  let audio = footerPlayBtn._linkedAudio;
-  let playBtn = footerPlayBtn._linkedPlayBtn;
-
-  // If no track is currently playing, determine the current track
-  if (!audio) {
-    let currentTrackIdx = -1;
-    const hash = window.location.hash.substring(1);
-
-    // Check if hash matches a track's ID
-    tracks.forEach((track, idx) => {
-      if (track.container.id === hash) {
-        currentTrackIdx = idx;
-      }
-    });
-
-    // If no hash match, use the first track
-    if (currentTrackIdx === -1 && tracks.length > 0) {
-      currentTrackIdx = 0;
-    }
-
-    if (currentTrackIdx !== -1) {
-      const { audio: selectedAudio, btnPlay: selectedBtn, container: selectedContainer } = tracks[currentTrackIdx];
-      audio = selectedAudio;
-      playBtn = selectedBtn;
-
-      // Pause all other tracks
-      tracks.forEach(({ audio: a, btnPlay: b }) => {
-        if (a && a !== audio) {
-          a.pause();
-          b.innerHTML = playSVG;
-        }
-      });
-
-      // Play the selected track
-      audio.play();
-      playBtn.innerHTML = pauseSVG;
-      footerPlayBtn.innerHTML = pauseSVG;
-
-      // Update playingIndex and footer
-      playingIndex = currentTrackIdx;
-      updateFooter(audio, playBtn, currentTrackIdx);
-    }
-  } else {
-    // Existing logic for toggling play/pause
-    if (audio.paused) {
-      tracks.forEach(({ audio: a, btnPlay: b }) => {
-        if (a && a !== audio) {
-          a.pause();
-          b.innerHTML = playSVG;
-        }
-      });
-      audio.play();
-      playBtn.innerHTML = pauseSVG;
-      footerPlayBtn.innerHTML = pauseSVG;
-    } else {
-      audio.pause();
-      playBtn.innerHTML = playSVG;
-      footerPlayBtn.innerHTML = playSVG;
-    }
-  }
-});
 
 // Volume slider input event updates all track volumes
 footerVolumeInput.addEventListener('input', e => {
@@ -812,7 +749,7 @@ window.addEventListener('keydown', e => {
 	}
 });
 
-// Keyboard shortcuts for playback skip (left/right arrows)
+// Keyboard shortcuts for playback seek (left/right arrows)
 window.addEventListener('keydown', e => {
 	if (playingIndex === -1) return;
 	const currentAudio = tracks[playingIndex]?.audio;
@@ -896,6 +833,31 @@ footerNextBtn.innerHTML = nextSVG;
 // Initialize volume controls
 updateVolumeBar(1);
 updateVolumePercent(1);
+
+// Event handler for footer play/pause track button
+footerPlayBtn.addEventListener('click', () => {
+	const audio = footerPlayBtn._linkedAudio;
+	const playBtn = footerPlayBtn._linkedPlayBtn;
+	if (!audio) return;
+
+	if (audio.paused) {
+		// Pause all other tracks except this one
+		tracks.forEach(({ audio: a, btnPlay: b }) => {
+			if (a && a !== audio) {
+				a.pause();
+				b.innerHTML = playSVG;
+			}
+		});
+		audio.play();
+		playBtn.innerHTML = pauseSVG;
+		footerPlayBtn.innerHTML = pauseSVG;
+	} else {
+		audio.pause();
+		playBtn.innerHTML = playSVG;
+		footerPlayBtn.innerHTML = playSVG;
+	}
+});
+
 
 // Event handler for previous track button
 footerPrevBtn.addEventListener('click', () => {
