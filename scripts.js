@@ -294,6 +294,15 @@ const createTrackElement = (data, idx) => {
 		}
 	});
 
+	// When track starts playing, update address bar with track anchor
+	audioElement.addEventListener('play', () => {
+		const trackId = trackElem.id;
+		const currentHash = window.location.hash.substring(1);
+		if (currentHash !== trackId) {
+			history.pushState({}, '', `#${trackId}`);
+		}
+	});
+
 	// Play/Pause button toggles playback state for this track
 	playPauseBtn.addEventListener('click', () => {
 		if (audioElement.paused) {
@@ -650,7 +659,7 @@ footerPlayBtn.addEventListener('click', () => {
   // If no track is currently playing, determine the current track
   if (!audio) {
     let currentTrackIdx = -1;
-    const hash = window.location.hash.substring(1); // Remove '#'
+    const hash = window.location.hash.substring(1);
 
     // Check if hash matches a track's ID
     tracks.forEach((track, idx) => {
