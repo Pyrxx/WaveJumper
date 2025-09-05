@@ -871,7 +871,13 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 
 // Handle anchor hash on page load
 window.addEventListener('load', function() {
-  const hash = window.location.hash;
+  let hash = window.location.hash;
+  if (!hash && tracks.length > 0) {
+    // No hash present, use first track's anchor
+    const firstTrackId = tracks[0].container.id;
+    hash = `#${firstTrackId}`;
+    history.pushState({}, '', hash);
+  }
   if (hash) {
     const elementId = hash.substring(1);
     const element = document.getElementById(elementId);
