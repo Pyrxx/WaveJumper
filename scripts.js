@@ -127,19 +127,19 @@ const footerVolumeInput = document.querySelector('#volume-slider');
 const volumePercentSpan = document.querySelector('#volume-percent');
 
 /* Footer UI helpers */
-function updateVolumeBar(volume) {
-  const perc = Math.round(clamp01(volume) * 100);
-  footerVolumeInput.style.setProperty('--vol-percent', `${perc}%`);
-}
+const updateVolumeBar = (volume) => {
+	const perc = Math.round(volume * 100);
+	footerVolumeInput.style.setProperty('--vol-percent', `${perc}%`);
+};
 
-function updateVolumePercent(volume) {
-  const percent = Math.round(clamp01(volume) * 100);
-  volumePercentSpan.textContent = `${percent}%`;
-}
+const updateVolumePercent = (volume) => {
+	const percent = Math.round(volume * 100);
+	volumePercentSpan.textContent = `${percent}%`;
+};
 
-function updateMuteButton() {
-  footerMuteBtn.innerHTML = isMuted ? unmuteSVG : muteSVG;
-}
+const updateMuteButton = () => {
+	footerMuteBtn.innerHTML = isMuted ? unmuteSVG : muteSVG;
+};
 
 /**
  * Synchronizes footer controls with an active track. Links the footer
@@ -782,69 +782,77 @@ function createTrackElement(data, idx) {
 
 /* Volume slider: propagate to all tracks, update UI and mute state */
 footerVolumeInput.addEventListener('input', e => {
-    let vol = parseFloat(e.target.value);
-    if (isNaN(vol)) vol = 1;
+	const vol = parseFloat(e.target.value);
+	tracks.forEach(({ audio }) => {
+		if (audio) audio.volume = vol;
+	});
+	updateVolumeBar(vol);
+	updateVolumePercent(vol);
 
-    // If unmuting and volume is below 5%, set it to 5%
-    if (!isMuted && vol > 0 && vol < 0.05) {
-        vol = 0.05;
-    }
-    const clamped = clamp01(vol);
-
-    tracks.forEach(({ audio }) => {
-        if (audio) {
-            audio.volume = clamped;
-            audio.muted = isMuted || clamped === 0;
-        }
-    });
-
-    updateVolumeBar(clamped);
-    updateVolumePercent(clamped);
-
-    if (clamped === 0) {
-        if (!isMuted) isMuted = true;
-    } else {
-        if (isMuted) isMuted = false;
-        prevVolume = clamped;
-    }
-    updateMuteButton();
+	// Update mute button state when volume reaches 0 or non-zero
+	if (vol === 0) {
+		isMuted = true;
+		prevVolume = 0.05; // Set prevVolume to 0.05 when volume reaches 0
+	} else if (isMuted) {
+		isMuted = false;
+		prevVolume = vol; // Update prevVolume to current volume
+	}
+	updateMuteButton();
 });
 
 /* Volume slider mouse wheel adjustment */
 footerVolumeInput.addEventListener('wheel', e => {
-    e.preventDefault();
-    const delta = e.deltaY || e.detail || e.wheelDelta;
-    let vol = parseFloat(footerVolumeInput.value);
-    if (isNaN(vol)) vol = 1;
-    
-    vol += delta < 0 ? VOLUME_STEP : -VOLUME_STEP;
+	e.preventDefault();
+	const delta = e.deltaY || e.detail || e.wheelDelta;
+	const step = 0.05;
+	let vol = parseFloat(footerVolumeInput.value);
+	vol += delta < 0 ? step : -step;
+	vol = Math.min(1, Math.max(0, vol));
+	footerVolumeInput.value = vol;
+	tracks.forEach(({ audio }) => {
+		if (audio) audio.volume = vol;
+	});
+	updateVolumeBar(vol);
+	updateVolumePercent(vol);
 
-    // If unmuting and volume is below 5%, set it to 5%
-    if (!isMuted && vol > 0 && vol < 0.05) {
-        vol = 0.05;
-    }
-    const clamped = clamp01(vol);
-    
-    footerVolumeInput.value = clamped;
-
-    tracks.forEach(({ audio }) => {
-        if (audio) {
-            audio.volume = clamped;
-            audio.muted = isMuted || clamped === 0;
-        }
-    });
-
-    updateVolumeBar(clamped);
-    updateVolumePercent(clamped);
-
-    if (clamped === 0) {
-        if (!isMuted) isMuted = true;
-    } else {
-        if (isMuted) isMuted = false;
-        prevVolume = clamped;
-    }
-    updateMuteButton();
+	// Update mute button state when volume reaches 0 or non-zero
+	if (vol === 0) {
+		isMuted = true;
+		prevVolume = 0.05; // Set prevVolume to 0.05 when volume reaches 0
+	} else if (isMuted) {
+		isMuted = false;
+		prevVolume = vol; // Update prevVolume to current volume
+	}
+	updateMuteButton();
 }, { passive: false });
+
+/* Footer mute */
+footerMuteBtn.addEventListener('click', () => {
+	isMuted = !isMuted;
+	updateMuteButton();
+
+	const currentVolume = parseFloat(footerVolumeInput.value);
+
+	if (isMuted) {
+		// Save the current volume from the slider
+		prevVolume = (currentVolume === 0 ? 0.05 : currentVolume);
+
+		// Mute all tracks regardless of playback state
+		tracks.forEach(({ audio }) => {
+			if (audio) audio.volume = 0;
+		});
+	} else {
+		// Unmute all tracks using the volume from the slider
+		tracks.forEach(({ audio }) => {
+			if (audio) audio.volume = prevVolume;
+		});
+	}
+
+	updateVolumeBar(isMuted ? 0 : prevVolume);
+	updateVolumePercent(isMuted ? 0 : prevVolume);
+	// Also update the volume slider value to reflect mute state
+	footerVolumeInput.value = isMuted ? 0 : prevVolume;
+});
 
 /* Footer play/pause */
 footerPlayBtn.addEventListener('click', () => { void toggleFooterPlay(); });
@@ -863,45 +871,6 @@ footerNextBtn.addEventListener('click', () => {
     void playNextTrack(playingIndex);
   }
 });
-
-/* Footer mute */
-footerMuteBtn.addEventListener('click', () => {
-  isMuted = !isMuted;
-  
-  if (isMuted) {
-    // When muting: save current volume with 5% minimum fallback
-    const currentVolume = parseFloat(footerVolumeInput.value);
-    prevVolume = currentVolume > 0 ? currentVolume : 0.05;
-    
-    tracks.forEach(({ audio }) => {
-      if (audio) audio.muted = true;
-    });
-    
-    updateVolumeBar(0);
-    updateVolumePercent(0);
-    footerVolumeInput.value = 0;
-  } else {
-    // When unmuting: restore prevVolume with 5% minimum guarantee
-    if (!prevVolume || prevVolume <= 0) {
-      prevVolume = 0.05;
-    }
-    
-    tracks.forEach(({ audio }) => {
-      if (audio) {
-        audio.muted = false;
-        audio.volume = prevVolume;
-      }
-    });
-    
-    updateVolumeBar(prevVolume);
-    updateVolumePercent(prevVolume);
-    footerVolumeInput.value = prevVolume;
-  }
-  
-  updateMuteButton();
-});
-
-
 
 /* Keyboard shortcuts: Space (toggle), Up/Down (prev/next), M/Numpad0 (mute), Left/Right (seek) */
 window.addEventListener('keydown', e => {
