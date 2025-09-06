@@ -233,6 +233,7 @@ function updateMediaSession(idx) {
  * Centralized play/pause/resume toggle. 
  * Resolves a target track if the global footer control is not yet linked, 
  * then toggles that track and keeps UI/state in sync.
+ * @param {any} direction +1/-1 for next/previous track.
  */
 async function togglePlay(direction) {
   let audio, playBtn;
@@ -828,25 +829,28 @@ footerNextBtn.addEventListener('click', () => { void togglePlay(+1); });
 /* Keyboard shortcuts: Space (toggle), Up/Down (prev/next), M/Numpad0 (mute), Left/Right (seek) */
 window.addEventListener('keydown', e => {
   switch (e.code) {
+    // play/pause
     case 'Space':
       e.preventDefault();
       void togglePlay();
       break;
+    // next track
     case 'ArrowDown':
-      if (playingIndex === -1) return;
       e.preventDefault();
-      void playNextTrack(playingIndex);
+      void togglePlay(+1);
       break;
+    // previous track
     case 'ArrowUp':
-      if (playingIndex === -1) return;
       e.preventDefault();
-      void playNextTrack(playingIndex - 2);
+      void togglePlay(-1);
       break;
+    // mute
     case 'KeyM':
     case 'Numpad0':
       e.preventDefault();
       footerMuteBtn.click();
       break;
+    // seek left/right
     case 'ArrowRight':
     case 'ArrowLeft': {
       if (playingIndex === -1) return;
@@ -871,12 +875,8 @@ if ('mediaSession' in navigator) {
   const mediaSession = navigator.mediaSession;
   mediaSession.setActionHandler('play', () => { void togglePlay(); });
   mediaSession.setActionHandler('pause', () => { void togglePlay(); });
-  mediaSession.setActionHandler('previoustrack', () => {
-    if (playingIndex !== -1) footerPrevBtn.click();
-  });
-  mediaSession.setActionHandler('nexttrack', () => {
-    if (playingIndex !== -1) footerNextBtn.click();
-  });
+  mediaSession.setActionHandler('previoustrack', () => { void togglePlay(-1); });
+  mediaSession.setActionHandler('nexttrack', () => { void togglePlay(+1); });
 }
 
 /* Anchors: intercept clicks to center elements and push hash */
