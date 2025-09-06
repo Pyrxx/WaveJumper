@@ -60,8 +60,8 @@ def extract_cover_base64(tags):
                 bottom = top + min_edge
                 img = img.crop((left, top, right, bottom))
 
-            # Resize to 460x460
-            img = img.resize((460, 460), Image.Resampling.LANCZOS)
+            # Resize to 512x512
+            img = img.resize((512, 512), Image.Resampling.LANCZOS)
 
             # Convert back to bytes (PNG format to preserve quality and transparency if any)
             buffered = BytesIO()
@@ -96,9 +96,9 @@ def compute_amplitudeData(audio_path, target_length=200):
     amplitudeData_json = json.dumps(amplitudeData)
 
     # Calculate duration in seconds
-    duration = int(round(total_samples / sr))
+    durationSec = int(round(total_samples / sr))
 
-    return amplitudeData_json, duration
+    return amplitudeData_json, durationSec
 
 def extract_date_from_title(title):
     if not title:
@@ -132,7 +132,7 @@ def main():
             return "".join(f"<p>{line}</p>\n" for line in comment.split("\r\n") if line.strip())
 
         comment = wrap_comment_in_paragraphs(comment)
-        amplitudeData_json, duration = compute_amplitudeData(filepath)
+        amplitudeData_json, durationSec = compute_amplitudeData(filepath)
         cover_b64 = extract_cover_base64(tags)
         date = extract_date_from_title(title)
         title = title[:-13] if title else None
@@ -143,7 +143,7 @@ def main():
             title,
             date,
             genre,
-            duration,
+            durationSec,
             comment,
             cover_b64,
             amplitudeData_json,

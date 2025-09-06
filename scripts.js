@@ -390,13 +390,13 @@ async function togglePlay(direction) {
  */
 function createTrackElement(data, idx) {
   // Data shape:
-  // [ filename, artist, title, date, genre, durationSec, detailsHTML, coverBase64, ampJSON, hash ]
+  // [ filename, artist, title, date, genre, durationSec, detailsHTML (comment), coverBase64, ampJSON, hash ]
   const fileName = data[0];
   const artist = data[1];
   const title = data[2];
   const dateStr = data[3];
   const genre = data[4];
-  const nominalDuration = data[5];
+  const durationSec = data[5];
   const detailsHTML = data[6];
   const coverBase64 = data[7];
   const ampDataRaw = JSON.parse(data[8]);
@@ -487,7 +487,7 @@ function createTrackElement(data, idx) {
 
   const durDiv = document.createElement('div');
   durDiv.className = 'duration';
-  durDiv.textContent = formatTime(nominalDuration);
+  durDiv.textContent = formatTime(durationSec);
 
   timeRow.appendChild(playPosDiv);
   timeRow.appendChild(sepDiv);
@@ -553,7 +553,7 @@ function createTrackElement(data, idx) {
   /* Waveform drawing context and amplitude preparation */
   const ctx = waveformCanvas.getContext('2d');
   const themeCache = getThemeVars();
-  const durationFallback = nominalDuration;
+  const durationFallback = durationSec;
 
   let currentCanvasWidth = 0;
   let ampData = [];
