@@ -1,9 +1,11 @@
 # Todo
-- describe data structure of `music.js` in `analyze_files.md`
-- handling for missing id3 tags in `analyze_files.py`
-- better date handling in `analyze_files.py`
-- in `analyze_files.py` ensure only changed and new tracks are getting analyzed
+- in `readme.md` explain reason for architecture
+- in `analyze_music.md` describe data structure of `music.js`
+- in `analyze_music.py` handling for missing id3 tags
+- in `analyze_music.py` better date handling
+- in `analyze_music.py` ensure only changed and new tracks are getting analyzed
+- in `index.html` add settings, hints, theme switcher
+- in `index.html` add loading screen
 - handling & layout for no cover art
-- settings, hints, theme switcher in `index.html`
 - try out another mobile first layout
 - seekbar in mobile lock screen
