@@ -230,14 +230,15 @@ function updateMediaSession(idx) {
 ============================================================================ */
 
 /**
- * Centralized footer play/pause toggle. Resolves a target track if the footer
- * is not yet linked, then toggles that track and keeps UI/state in sync.
+ * Centralized play/pause/resume toggle. 
+ * Resolves a target track if the global footer control is not yet linked, 
+ * then toggles that track and keeps UI/state in sync.
  */
-async function toggleFooterPlay() {
-  let audio = footerPlayBtn._linkedAudio;
-  let playBtn = footerPlayBtn._linkedPlayBtn;
+async function togglePlay(direction) {
+  let audio, playBtn;
   let idx = Number.isInteger(footerPlayBtn._linkedIndex) ? footerPlayBtn._linkedIndex : -1;
 
+  // Determine index
   if (!audio) {
     if (playingIndex !== -1) {
       idx = playingIndex;
@@ -246,17 +247,28 @@ async function toggleFooterPlay() {
       idx = tracks.findIndex(t => t.container.id === hashId);
       if (idx < 0) idx = 0;
     }
-
-    const target = tracks[idx];
-    if (!target) return;
-    audio = target.audio;
-    playBtn = target.btnPlay;
-    updateFooter(audio, playBtn, idx);
   }
 
-  const wasPaused = audio.paused;
+  // Handle prev/next logic
+  if (direction === -1) { // Previous
+    if (idx > 0) idx -= 1;
+    else return; // no previous
+  } else if (direction === +1) { // Next
+    if (idx < tracks.length - 1) idx += 1;
+    else return; // no next
+  }
 
-  // Pause all other tracks and reset their play buttons
+  const target = tracks[idx];
+  if (!target) return;
+  audio = target.audio;
+  playBtn = target.btnPlay;
+  updateFooter(audio, playBtn, idx);
+
+  // Always reset position to start for prev/next
+  if (direction !== undefined) audio.currentTime = 0;
+
+  const wasPaused = audio.paused;
+  // Pause others & reset their play btn
   tracks.forEach(({ audio: a, btnPlay: b }) => {
     if (a && a !== audio) {
       a.pause();
@@ -267,18 +279,16 @@ async function toggleFooterPlay() {
     }
   });
 
-  if (wasPaused) {
+  if (wasPaused || direction !== undefined) {
     const ok = await safePlay(audio);
     if (!ok) return;
-
     if (playBtn) {
       playBtn.innerHTML = pauseSVG;
       playBtn.setAttribute('aria-pressed', 'true');
     }
     footerPlayBtn.innerHTML = pauseSVG;
-    playingIndex = Number.isInteger(idx) ? idx : playingIndex;
-
-    // Keep hash and scroll aligned with active track
+    playingIndex = idx;
+    // Sync hash & scroll to active track
     const id = tracks[playingIndex]?.container?.id;
     if (id && window.location.hash.slice(1) !== id) {
       history.pushState({}, '', `#${id}`);
@@ -286,8 +296,6 @@ async function toggleFooterPlay() {
     if (tracks[playingIndex]?.container) {
       scrollToCenterElement(tracks[playingIndex].container);
     }
-
-    // Media session metadata/state
     updateMediaSession(playingIndex);
     if ('mediaSession' in navigator) {
       navigator.mediaSession.playbackState = 'playing';
@@ -299,47 +307,9 @@ async function toggleFooterPlay() {
       playBtn.setAttribute('aria-pressed', 'false');
     }
     footerPlayBtn.innerHTML = playSVG;
-
     if ('mediaSession' in navigator) {
       navigator.mediaSession.playbackState = 'paused';
     }
-  }
-}
-
-/**
- * Plays the next track after the given index, if any.
- * Resets other tracks, updates UI, centers the new track.
- */
-async function playNextTrack(currentIndex) {
-  let nextIdx = currentIndex + 1;
-  if (nextIdx >= tracks.length) {
-    updateFooter(null, null, -1);
-    return;
-  }
-
-  const { audio, btnPlay, container } = tracks[nextIdx];
-
-  tracks.forEach(({ audio: a, btnPlay: b }) => {
-    if (a && a !== audio) {
-      a.pause();
-      b.innerHTML = playSVG;
-      b.setAttribute('aria-pressed', 'false');
-    }
-  });
-
-  audio.currentTime = 0;
-  const ok = await safePlay(audio);
-  if (!ok) return;
-
-  btnPlay.innerHTML = pauseSVG;
-  btnPlay.setAttribute('aria-pressed', 'true');
-  playingIndex = nextIdx;
-  updateFooter(audio, btnPlay, nextIdx);
-  scrollToCenterElement(container);
-
-  updateMediaSession(nextIdx);
-  if ('mediaSession' in navigator) {
-    navigator.mediaSession.playbackState = 'playing';
   }
 }
 
@@ -545,15 +515,7 @@ function createTrackElement(data, idx) {
   updateCanvasWidthAndDraw();
 
   /* End-of-track handler: reset and advance */
-  audioElement.addEventListener('ended', () => {
-    playPauseBtn.innerHTML = playSVG;
-    playPauseBtn.setAttribute('aria-pressed', 'false');
-    if (playingIndex === idx) {
-      playingIndex = -1;
-      updateFooter(null, null, -1);
-      playNextTrack(idx);
-    }
-  });
+  audioElement.addEventListener('ended', () => { footerNextBtn.click(); });
 
   /* Align the URL anchor with the active track when playback begins */
   audioElement.addEventListener('play', () => {
@@ -855,22 +817,13 @@ footerMuteBtn.addEventListener('click', () => {
 });
 
 /* Footer play/pause */
-footerPlayBtn.addEventListener('click', () => { void toggleFooterPlay(); });
+footerPlayBtn.addEventListener('click', () => { void togglePlay(); });
 
 /* Footer previous */
-footerPrevBtn.addEventListener('click', () => {
-  if (playingIndex === -1) return;
-  // playNextTrack expects index of just-ended track; to go previous, subtract 2
-  void playNextTrack(playingIndex - 2);
-});
+footerPrevBtn.addEventListener('click', () => { void togglePlay(-1); });
 
 /* Footer next */
-footerNextBtn.addEventListener('click', () => {
-  if (playingIndex === -1) return;
-  if (playingIndex + 1 < tracks.length) {
-    void playNextTrack(playingIndex);
-  }
-});
+footerNextBtn.addEventListener('click', () => { void togglePlay(+1); });
 
 /* Keyboard shortcuts: Space (toggle), Up/Down (prev/next), M/Numpad0 (mute), Left/Right (seek) */
 window.addEventListener('keydown', e => {
