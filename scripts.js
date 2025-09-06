@@ -830,7 +830,7 @@ window.addEventListener('keydown', e => {
   switch (e.code) {
     case 'Space':
       e.preventDefault();
-      void toggleFooterPlay();
+      void togglePlay();
       break;
     case 'ArrowDown':
       if (playingIndex === -1) return;
@@ -869,8 +869,8 @@ window.addEventListener('keydown', e => {
 /* Media Session hardware key handlers (if available) */
 if ('mediaSession' in navigator) {
   const mediaSession = navigator.mediaSession;
-  mediaSession.setActionHandler('play', () => { void toggleFooterPlay(); });
-  mediaSession.setActionHandler('pause', () => { void toggleFooterPlay(); });
+  mediaSession.setActionHandler('play', () => { void togglePlay(); });
+  mediaSession.setActionHandler('pause', () => { void togglePlay(); });
   mediaSession.setActionHandler('previoustrack', () => {
     if (playingIndex !== -1) footerPrevBtn.click();
   });
