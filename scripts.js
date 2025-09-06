@@ -50,7 +50,7 @@ function getThemeVars() {
   const root = document.documentElement;
   const cs = getComputedStyle(root);
   return {
-    highlightMuted: cs.getPropertyValue('--highlight-muted').trim(),
+    highlight: cs.getPropertyValue('--highlight').trim(),
     highlightAlt: cs.getPropertyValue('--highlight-alt').trim(),
     textColorMuted: cs.getPropertyValue('--text-color-muted').trim()
   };
@@ -81,7 +81,7 @@ function drawWaveform(ctx, ampData, progress, width, height, hoverIndex = -1, is
     if (isHovering && i === hoverIndex) {
       fillStyle = colors.highlightAlt;
     } else if (progress > 0 && i / total <= progress) {
-      fillStyle = colors.highlightMuted;
+      fillStyle = colors.highlight;
     } else {
       fillStyle = colors.textColorMuted;
     }
