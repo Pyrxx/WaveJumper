@@ -205,14 +205,14 @@ async function safePlay(audio) {
 }
 
 /* Updates Media Session metadata for a given track index */
-function updateMediaSession(idx) {
+function updateMediaSession(idx, playbackState = 'none') {
   if (!('mediaSession' in navigator)) return;
   const t = tracks[idx];
   if (!t) return;
 
   const artist = t.container.querySelector('.track-artist')?.textContent || '';
-  const title  = t.container.querySelector('.track-title')?.textContent || '';
-  const imgEl  = t.container.querySelector('.track-cover');
+  const title = t.container.querySelector('.track-title')?.textContent || '';
+  const imgEl = t.container.querySelector('.track-cover');
   const artworkSrc = imgEl?.src || '';
 
   try {
@@ -222,7 +222,25 @@ function updateMediaSession(idx) {
       album: '',
       artwork: artworkSrc ? [{ src: artworkSrc, sizes: '340x340', type: 'image/png' }] : []
     });
-  } catch {}
+    
+    navigator.mediaSession.playbackState = playbackState; // 'playing', 'paused', 'none'
+  } catch (err) {
+    // silently ignore errors
+  }
+}
+
+/**
+ * Initializes the media session action handlers centrally.
+ * Call once on initialization.
+ */
+function initMediaSessionActions() {
+  if (!('mediaSession' in navigator)) return;
+  const mediaSession = navigator.mediaSession;
+
+  mediaSession.setActionHandler('play', () => { void togglePlay(); });
+  mediaSession.setActionHandler('pause', () => { void togglePlay(); });
+  mediaSession.setActionHandler('previoustrack', () => { void togglePlay(-1); });
+  mediaSession.setActionHandler('nexttrack', () => { void togglePlay(+1); });
 }
 
 /* ============================================================================
@@ -297,10 +315,7 @@ async function togglePlay(direction) {
     if (tracks[playingIndex]?.container) {
       scrollToCenterElement(tracks[playingIndex].container);
     }
-    updateMediaSession(playingIndex);
-    if ('mediaSession' in navigator) {
-      navigator.mediaSession.playbackState = 'playing';
-    }
+    updateMediaSession(playingIndex, 'playing');
   } else {
     audio.pause();
     if (playBtn) {
@@ -308,9 +323,7 @@ async function togglePlay(direction) {
       playBtn.setAttribute('aria-pressed', 'false');
     }
     footerPlayBtn.innerHTML = playSVG;
-    if ('mediaSession' in navigator) {
-      navigator.mediaSession.playbackState = 'paused';
-    }
+    updateMediaSession(playingIndex, 'paused');
   }
 }
 
@@ -546,25 +559,15 @@ function createTrackElement(data, idx) {
       playPauseBtn.setAttribute('aria-pressed', 'true');
       playingIndex = idx;
       updateFooter(audioElement, playPauseBtn, idx);
-
-      // Center the active track in the viewport
       scrollToCenterElement(trackElem);
-
-      // Media session metadata/state
-      updateMediaSession(idx);
-      if ('mediaSession' in navigator) {
-        navigator.mediaSession.playbackState = 'playing';
-      }
+      updateMediaSession(idx, 'playing');
     } else {
       audioElement.pause();
       playPauseBtn.innerHTML = playSVG;
       playPauseBtn.setAttribute('aria-pressed', 'false');
       if (playingIndex === idx) playingIndex = -1;
       updateFooter(null, null, -1);
-
-      if ('mediaSession' in navigator) {
-        navigator.mediaSession.playbackState = 'paused';
-      }
+      updateMediaSession(idx, 'paused');
     }
   });
 
@@ -846,7 +849,6 @@ window.addEventListener('keydown', e => {
       break;
     // mute
     case 'KeyM':
-    case 'Numpad0':
       e.preventDefault();
       footerMuteBtn.click();
       break;
@@ -871,13 +873,7 @@ window.addEventListener('keydown', e => {
 });
 
 /* Media Session hardware key handlers (if available) */
-if ('mediaSession' in navigator) {
-  const mediaSession = navigator.mediaSession;
-  mediaSession.setActionHandler('play', () => { void togglePlay(); });
-  mediaSession.setActionHandler('pause', () => { void togglePlay(); });
-  mediaSession.setActionHandler('previoustrack', () => { void togglePlay(-1); });
-  mediaSession.setActionHandler('nexttrack', () => { void togglePlay(+1); });
-}
+initMediaSessionActions();
 
 /* Anchors: intercept clicks to center elements and push hash */
 const handleAnchorClick = (event) => {
