@@ -126,19 +126,19 @@ const footerMuteBtn = document.querySelector('#btn-mute');
 const footerVolumeInput = document.querySelector('#volume-slider');
 const volumePercentSpan = document.querySelector('#volume-percent');
 
-/* Footer UI helpers */
+/* Global volume UI helpers */
 const updateVolumeBar = (volume) => {
-	const perc = Math.round(volume * 100);
-	footerVolumeInput.style.setProperty('--vol-percent', `${perc}%`);
+  const perc = Math.round(volume * 100);
+  footerVolumeInput.style.setProperty('--vol-percent', `${perc}%`);
 };
 
 const updateVolumePercent = (volume) => {
-	const percent = Math.round(volume * 100);
-	volumePercentSpan.textContent = `${percent}%`;
+  const percent = Math.round(volume * 100);
+  volumePercentSpan.textContent = `${percent}%`;
 };
 
 const updateMuteButton = () => {
-	footerMuteBtn.innerHTML = isMuted ? unmuteSVG : muteSVG;
+  footerMuteBtn.innerHTML = isMuted ? unmuteSVG : muteSVG;
 };
 
 /**
@@ -204,9 +204,16 @@ async function safePlay(audio) {
   }
 }
 
-/* Updates Media Session metadata for a given track index */
+/**
+ * Updates Media Session metadata and playback state for a given track index.
+ * Also sets complete action handlers for lock screen and notification integration.
+ * 
+ * @param {number} idx - Index of the track in the global tracks array.
+ * @param {string} playbackState - Playback state: 'none', 'paused', or 'playing'.
+ */
 function updateMediaSession(idx, playbackState = 'none') {
   if (!('mediaSession' in navigator)) return;
+
   const t = tracks[idx];
   if (!t) return;
 
@@ -220,27 +227,73 @@ function updateMediaSession(idx, playbackState = 'none') {
       title,
       artist,
       album: '',
-      artwork: artworkSrc ? [{ src: artworkSrc, sizes: '340x340', type: 'image/png' }] : []
+      artwork: artworkSrc ? [{ src: artworkSrc, sizes: '512x512', type: 'image/png' }] : []
     });
-    
-    navigator.mediaSession.playbackState = playbackState; // 'playing', 'paused', 'none'
+
+    // Normalize playbackState to 'playing' or 'paused' for loaded media
+    if (playbackState === 'none') playbackState = 'paused';
+
+    navigator.mediaSession.playbackState = playbackState;
+
+    const mediaSession = navigator.mediaSession;
+
+    // Play action handler toggles play/pause
+    mediaSession.setActionHandler('play', async () => {
+      const audio = tracks[playingIndex]?.audio;
+      if (audio && audio.paused) {
+        try { await audio.play(); } catch { }
+        updateMediaSession(playingIndex, 'playing');
+      }
+    });
+
+    // Pause action handler toggles play/pause
+    mediaSession.setActionHandler('pause', () => {
+      const audio = tracks[playingIndex]?.audio;
+      if (audio && !audio.paused) {
+        audio.pause();
+        updateMediaSession(playingIndex, 'paused');
+      }
+    });
+
+    // Previous track action moves to previous if possible
+    mediaSession.setActionHandler('previoustrack', () => {
+      if (playingIndex > 0) togglePlay(-1);
+    });
+
+    // Next track action moves to next if possible
+    mediaSession.setActionHandler('nexttrack', () => {
+      if (playingIndex < tracks.length - 1) togglePlay(+1);
+    });
+
+    // Seek backward (default 10 seconds)
+    mediaSession.setActionHandler('seekbackward', (details) => {
+      const audio = tracks[playingIndex]?.audio;
+      if (!audio) return;
+      const skip = (details.seekOffset || 10);
+      audio.currentTime = Math.max(audio.currentTime - skip, 0);
+    });
+
+    // Seek forward (default 10 seconds)
+    mediaSession.setActionHandler('seekforward', (details) => {
+      const audio = tracks[playingIndex]?.audio;
+      if (!audio) return;
+      const skip = (details.seekOffset || 10);
+      audio.currentTime = Math.min(audio.currentTime + skip, audio.duration || Infinity);
+    });
+
+    // Stop action pauses and resets playback
+    mediaSession.setActionHandler('stop', () => {
+      const audio = tracks[playingIndex]?.audio;
+      if (!audio) return;
+      audio.pause();
+      audio.currentTime = 0;
+      updateMediaSession(playingIndex, 'paused');
+    });
+
   } catch (err) {
-    // silently ignore errors
+    // Silently ignore non-critical errors, but log for debugging
+    console.warn('Failed to update Media Session:', err);
   }
-}
-
-/**
- * Initializes the media session action handlers centrally.
- * Call once on initialization.
- */
-function initMediaSessionActions() {
-  if (!('mediaSession' in navigator)) return;
-  const mediaSession = navigator.mediaSession;
-
-  mediaSession.setActionHandler('play', () => { void togglePlay(); });
-  mediaSession.setActionHandler('pause', () => { void togglePlay(); });
-  mediaSession.setActionHandler('previoustrack', () => { void togglePlay(-1); });
-  mediaSession.setActionHandler('nexttrack', () => { void togglePlay(+1); });
 }
 
 /* ============================================================================
@@ -251,7 +304,7 @@ function initMediaSessionActions() {
  * Centralized play/pause/resume toggle. 
  * Resolves a target track if the global footer control is not yet linked, 
  * then toggles that track and keeps UI/state in sync.
- * @param {any} direction +1/-1 for next/previous track.
+ * @param {any} direction -1/+1 for previous/next track.
  */
 async function togglePlay(direction) {
   let audio, playBtn;
@@ -748,76 +801,76 @@ function createTrackElement(data, idx) {
 
 /* Volume slider: propagate to all tracks, update UI and mute state */
 footerVolumeInput.addEventListener('input', e => {
-	const vol = parseFloat(e.target.value);
-	tracks.forEach(({ audio }) => {
-		if (audio) audio.volume = vol;
-	});
-	updateVolumeBar(vol);
-	updateVolumePercent(vol);
+  const vol = parseFloat(e.target.value);
+  tracks.forEach(({ audio }) => {
+    if (audio) audio.volume = vol;
+  });
+  updateVolumeBar(vol);
+  updateVolumePercent(vol);
 
-	// Update mute button state when volume reaches 0 or non-zero
-	if (vol === 0) {
-		isMuted = true;
-		prevVolume = 0.05; // Set prevVolume to 0.05 when volume reaches 0
-	} else if (isMuted) {
-		isMuted = false;
-		prevVolume = vol; // Update prevVolume to current volume
-	}
-	updateMuteButton();
+  // Update mute button state when volume reaches 0 or non-zero
+  if (vol === 0) {
+    isMuted = true;
+    prevVolume = 0.05; // Set prevVolume to 0.05 when volume reaches 0
+  } else if (isMuted) {
+    isMuted = false;
+    prevVolume = vol; // Update prevVolume to current volume
+  }
+  updateMuteButton();
 });
 
 /* Volume slider mouse wheel adjustment */
 footerVolumeInput.addEventListener('wheel', e => {
-	e.preventDefault();
-	const delta = e.deltaY || e.detail || e.wheelDelta;
-	const step = 0.05;
-	let vol = parseFloat(footerVolumeInput.value);
-	vol += delta < 0 ? step : -step;
-	vol = Math.min(1, Math.max(0, vol));
-	footerVolumeInput.value = vol;
-	tracks.forEach(({ audio }) => {
-		if (audio) audio.volume = vol;
-	});
-	updateVolumeBar(vol);
-	updateVolumePercent(vol);
+  e.preventDefault();
+  const delta = e.deltaY || e.detail || e.wheelDelta;
+  const step = 0.05;
+  let vol = parseFloat(footerVolumeInput.value);
+  vol += delta < 0 ? step : -step;
+  vol = Math.min(1, Math.max(0, vol));
+  footerVolumeInput.value = vol;
+  tracks.forEach(({ audio }) => {
+    if (audio) audio.volume = vol;
+  });
+  updateVolumeBar(vol);
+  updateVolumePercent(vol);
 
-	// Update mute button state when volume reaches 0 or non-zero
-	if (vol === 0) {
-		isMuted = true;
-		prevVolume = 0.05; // Set prevVolume to 0.05 when volume reaches 0
-	} else if (isMuted) {
-		isMuted = false;
-		prevVolume = vol; // Update prevVolume to current volume
-	}
-	updateMuteButton();
+  // Update mute button state when volume reaches 0 or non-zero
+  if (vol === 0) {
+    isMuted = true;
+    prevVolume = 0.05; // Set prevVolume to 0.05 when volume reaches 0
+  } else if (isMuted) {
+    isMuted = false;
+    prevVolume = vol; // Update prevVolume to current volume
+  }
+  updateMuteButton();
 }, { passive: false });
 
 /* Footer mute */
 footerMuteBtn.addEventListener('click', () => {
-	isMuted = !isMuted;
-	updateMuteButton();
+  isMuted = !isMuted;
+  updateMuteButton();
 
-	const currentVolume = parseFloat(footerVolumeInput.value);
+  const currentVolume = parseFloat(footerVolumeInput.value);
 
-	if (isMuted) {
-		// Save the current volume from the slider
-		prevVolume = (currentVolume === 0 ? 0.05 : currentVolume);
+  if (isMuted) {
+    // Save the current volume from the slider
+    prevVolume = (currentVolume === 0 ? 0.05 : currentVolume);
 
-		// Mute all tracks regardless of playback state
-		tracks.forEach(({ audio }) => {
-			if (audio) audio.volume = 0;
-		});
-	} else {
-		// Unmute all tracks using the volume from the slider
-		tracks.forEach(({ audio }) => {
-			if (audio) audio.volume = prevVolume;
-		});
-	}
+    // Mute all tracks regardless of playback state
+    tracks.forEach(({ audio }) => {
+      if (audio) audio.volume = 0;
+    });
+  } else {
+    // Unmute all tracks using the volume from the slider
+    tracks.forEach(({ audio }) => {
+      if (audio) audio.volume = prevVolume;
+    });
+  }
 
-	updateVolumeBar(isMuted ? 0 : prevVolume);
-	updateVolumePercent(isMuted ? 0 : prevVolume);
-	// Also update the volume slider value to reflect mute state
-	footerVolumeInput.value = isMuted ? 0 : prevVolume;
+  updateVolumeBar(isMuted ? 0 : prevVolume);
+  updateVolumePercent(isMuted ? 0 : prevVolume);
+  // Also update the volume slider value to reflect mute state
+  footerVolumeInput.value = isMuted ? 0 : prevVolume;
 });
 
 /* Footer play/pause */
@@ -871,9 +924,6 @@ window.addEventListener('keydown', e => {
       break;
   }
 });
-
-/* Media Session hardware key handlers (if available) */
-initMediaSessionActions();
 
 /* Anchors: intercept clicks to center elements and push hash */
 const handleAnchorClick = (event) => {
