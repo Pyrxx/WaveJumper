@@ -5,5 +5,5 @@
 - in `analyze_files.py` ensure only changed and new tracks are getting analyzed
 - handling & layout for no cover art
 - settings, hints, theme switcher in `index.html`
-- disable duration text update. lower update interval for play position text.
-- rework footer controls
+- try out another mobile first layout
+- seekbar in mobile lock screen
