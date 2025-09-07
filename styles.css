@@ -107,7 +107,6 @@ body {
   line-height: 1;
   font-size: 16px;
   font-weight: normal;
-  padding-top: 20px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: var(--background);
@@ -140,6 +139,13 @@ table {
   flex-direction: column;
   justify-content: center; /* vertical centering */
 }
+#header-inner {
+  margin: 0 auto;
+  height: 120px;
+  background-image: url(WAVEJUMPER_bright.png);
+  background-repeat: no-repeat;
+  background-position: 50% 50%;
+}
 #playlist-container {
   width: 100%;
   box-sizing: border-box;
@@ -171,12 +177,26 @@ table {
 .playback-button {
   background: var(--highlight);
   border-radius: 4px;
+  position: relative;
 }
-.playback-button:hover,
-#volume-slider:hover {
-  background: var(--highlight-bright);
-  outline-offset: 1px;
-  outline: 1px solid var(--highlight-bright);
+.playback-button::before,
+#volume-slider::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border: 1px solid var(--highlight-bright);
+  border-radius: 6px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+  box-sizing: border-box;
+}
+.playback-button:hover::before,
+#volume-slider:hover::before {
+  opacity: 1;
 }
 .track-item {
   display: flex;
@@ -435,14 +455,15 @@ canvas.track-waveform-canvas {
   width: 120px;
   cursor: pointer;
   appearance: none;
-  -webkit-appearance: none;
   background-color: var(--background);
   height: 20px;
   border-radius: 5px;
   position: relative;
   overflow: hidden;
   --vol-percent: 100%;
+  -webkit-appearance: none;
   -webkit-tap-highlight-color: transparent;
+  touch-action: pan-y;
 }
 #volume-slider::-webkit-slider-runnable-track {
   height: 20px;
