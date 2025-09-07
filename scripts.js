@@ -217,15 +217,15 @@ function updateMediaSession(idx, playbackState = 'none') {
   const t = tracks[idx];
   if (!t) return;
 
-  const artist = t.container.querySelector('.track-artist')?.textContent || '';
-  const title = t.container.querySelector('.track-title')?.textContent || '';
+  const mediaArtist = t.container.querySelector('.track-artist')?.textContent || '';
+  const mediaTitle = t.container.querySelector('.track-title')?.textContent || '';
   const imgEl = t.container.querySelector('.track-cover-img');
   const artworkSrc = imgEl?.src || '';
 
   try {
     navigator.mediaSession.metadata = new MediaMetadata({
-      title,
-      artist,
+      mediaTitle,
+      mediaArtist,
       album: '',
       artwork: artworkSrc ? [{ src: artworkSrc, sizes: '512x512', type: 'image/png' }] : []
     });
@@ -391,19 +391,19 @@ async function togglePlay(direction) {
 function createtrackItemDivent(data, idx) {
   // Data shape:
   // [ filename, artist, title, date, genre, durationSec, detailsHTML (comment), coverBase64, ampJSON, hash ]
-  const fileName = data[0];
-  const artist = data[1];
-  const title = data[2];
-  const dateStr = data[3];
-  const genre = data[4];
-  const durationSec = data[5];
-  const detailsHTML = data[6];
-  const coverBase64 = data[7];
-  const ampDataRaw = JSON.parse(data[8]);
+  const dataFileName = data[0];
+  const dataArtist = data[1];
+  const dataTitle = data[2];
+  const dataDateStr = data[3];
+  const dataGenre = data[4];
+  const dataDurationSec = data[5];
+  const dataDetailsHTML = data[6];
+  const dataCoverBase64 = data[7];
+  const dataAmpRaw = JSON.parse(data[8]);
 
   const trackItemDiv = document.createElement('div');
   trackItemDiv.className = 'track-item content';
-  trackItemDiv.id = slugify(fileName);
+  trackItemDiv.id = slugify(dataFileName);
 
   const trackMainDiv = document.createElement('div');
   trackMainDiv.className = 'track-main';
@@ -419,16 +419,16 @@ function createtrackItemDivent(data, idx) {
   trackCoverLink.className = 'track-cover-link';
 
   const trackCoverImg = document.createElement('img');
-  trackCoverImg.alt = `${title} cover art`;
+  trackCoverImg.alt = `${dataTitle} cover art`;
   trackCoverImg.className = 'track-cover-img';
-  trackCoverImg.src = `data:image/png;base64,${coverBase64}`;
+  trackCoverImg.src = `data:image/png;base64,${dataCoverBase64}`;
 
   trackCoverLink.appendChild(trackCoverImg);
   trackCoverDiv.appendChild(trackCoverLink);
 
   const trackPlayPauseBtn = document.createElement('button');
   trackPlayPauseBtn.className = 'playback-button track-btn-play-pause';
-  trackPlayPauseBtn.setAttribute('aria-label', `Play or Pause ${title} by ${artist}`);
+  trackPlayPauseBtn.setAttribute('aria-label', `Play or Pause ${dataTitle} by ${dataArtist}`);
   trackPlayPauseBtn.setAttribute('aria-pressed', 'false');
   trackPlayPauseBtn.innerHTML = playSVG;
 
@@ -437,22 +437,22 @@ function createtrackItemDivent(data, idx) {
 
   const trackArtistDiv = document.createElement('div');
   trackArtistDiv.className = 'track-artist';
-  trackArtistDiv.textContent = artist;
+  trackArtistDiv.textContent = dataArtist;
 
   const trackTitleDiv = document.createElement('div');
   trackTitleDiv.className = 'track-title';
-  trackTitleDiv.textContent = title;
+  trackTitleDiv.textContent = dataTitle;
 
   trackArtistTitleDiv.appendChild(trackArtistDiv);
   trackArtistTitleDiv.appendChild(trackTitleDiv);
 
   const trackGenreDiv = document.createElement('div');
   trackGenreDiv.className = 'track-genre';
-  trackGenreDiv.textContent = genre;
+  trackGenreDiv.textContent = dataGenre;
 
   const trackDateDiv = document.createElement('div');
   trackDateDiv.className = 'track-date';
-  trackDateDiv.textContent = dateStr;
+  trackDateDiv.textContent = dataDateStr;
 
   const trackTimeDiv = document.createElement('div');
   trackTimeDiv.className = 'track-time';
@@ -463,7 +463,7 @@ function createtrackItemDivent(data, idx) {
 
   const trackDurationDiv = document.createElement('div');
   trackDurationDiv.className = 'track-duration';
-  trackDurationDiv.textContent = formatTime(durationSec);
+  trackDurationDiv.textContent = formatTime(dataDurationSec);
 
   trackTimeDiv.appendChild(trackPlayPosDiv);
   trackTimeDiv.appendChild(trackDurationDiv);
@@ -483,7 +483,7 @@ function createtrackItemDivent(data, idx) {
   trackMainDiv.appendChild(trackPlayPauseBtn);
   trackMainDiv.appendChild(trackArtistTitleDiv);
 
-  if (genre != null && String(genre).trim() !== '') {
+  if (dataGenre != null && String(dataGenre).trim() !== '') {
     trackMainDiv.appendChild(trackGenreDiv);
   }
 
@@ -493,7 +493,7 @@ function createtrackItemDivent(data, idx) {
   const trackDetailsDiv = document.createElement('div');
   trackDetailsDiv.className = 'track-details';
 
-  if (detailsHTML != null && String(detailsHTML).trim() !== '') {
+  if (dataDetailsHTML != null && String(dataDetailsHTML).trim() !== '') {
     const trackDetailsBtn = document.createElement('button');
     trackDetailsBtn.className = 'track-details-btn';
     trackDetailsBtn.setAttribute('aria-expanded', 'false');
@@ -501,7 +501,7 @@ function createtrackItemDivent(data, idx) {
 
     const trackDetailsContentDiv = document.createElement('div');
     trackDetailsContentDiv.className = 'track-details-content';
-    trackDetailsContentDiv.innerHTML = detailsHTML;
+    trackDetailsContentDiv.innerHTML = dataDetailsHTML;
 
     trackDetailsBtn.addEventListener('click', () => {
       const expanded = trackDetailsBtn.getAttribute('aria-expanded') === 'true';
@@ -520,7 +520,7 @@ function createtrackItemDivent(data, idx) {
 
   // Hidden audio element
   const audioElement = document.createElement('audio');
-  audioElement.src = `music/${fileName}`;
+  audioElement.src = `music/${dataFileName}`;
   audioElement.preload = 'metadata';
   audioElement.style.display = 'none';
   audioElement.controls = false;
@@ -529,7 +529,7 @@ function createtrackItemDivent(data, idx) {
   /* Waveform drawing context and amplitude preparation */
   const ctx = trackWaveformCanvas.getContext('2d');
   const themeCache = getThemeVars();
-  const durationFallback = durationSec;
+  const durationFallback = dataDurationSec;
 
   let currentCanvasWidth = 0;
   let ampData = [];
@@ -550,7 +550,7 @@ function createtrackItemDivent(data, idx) {
     currentCanvasWidth = containerWidth;
 
     const numPeaks = containerWidth > 0 ? Math.floor(containerWidth / WAVE_PEAK_UNIT) : 0;
-    ampData = interpolateAmplitudeData(ampDataRaw, Math.max(numPeaks, 0));
+    ampData = interpolateAmplitudeData(dataAmpRaw, Math.max(numPeaks, 0));
 
     drawWaveform(ctx, ampData, 0, trackWaveformCanvas.width, WAVE_HEIGHT, -1, false, themeCache);
   };
@@ -625,9 +625,9 @@ function createtrackItemDivent(data, idx) {
 
   function setHoverUI(showHover) {
     if (showHover) {
-      trackPlayPosDiv.classList.add('track-play-pos-wave-hover');
+      trackTimeDiv.classList.add('wave-hover');
     } else {
-      trackPlayPosDiv.classList.remove('track-play-pos-wave-hover');
+      trackTimeDiv.classList.remove('wave-hover');
     }
   }
 

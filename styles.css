@@ -323,6 +323,9 @@ canvas.track-waveform-canvas {
   white-space: nowrap;
   z-index: 3;
 }
+.track-time.wave-hover {
+  background: var(--highlight);
+}
 .track-duration {
   border-left: 1px solid var(--text-color);
   padding-left: 4px;
@@ -330,7 +333,7 @@ canvas.track-waveform-canvas {
 .track-play-pos {
   padding-right: 4px;
 }
-.track-play-pos-wave-hover {
+.track-play-pos.wave-hover {
   color: var(--highlight);
 }
 .track-details {
