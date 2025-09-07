@@ -119,17 +119,17 @@ let playingIndex = -1;        // Index of currently playing track, -1 if none
 let isMuted = false;          // Global mute toggle
 let prevVolume = 1;           // Last non-zero volume (for unmute restore)
 
-const footerPlayBtn = document.querySelector('#btn-play-pause');
-const footerPrevBtn = document.querySelector('#btn-prev');
-const footerNextBtn = document.querySelector('#btn-next');
-const footerMuteBtn = document.querySelector('#btn-mute');
-const footerVolumeInput = document.querySelector('#volume-slider');
+const globalPlayBtn = document.querySelector('#btn-play-pause');
+const globalPrevBtn = document.querySelector('#btn-prev');
+const globalNextBtn = document.querySelector('#btn-next');
+const globalMuteBtn = document.querySelector('#btn-mute');
+const globalVolumeInput = document.querySelector('#volume-slider');
 const volumePercentSpan = document.querySelector('#volume-percent');
 
 /* Global volume UI helpers */
 const updateVolumeBar = (volume) => {
   const perc = Math.round(volume * 100);
-  footerVolumeInput.style.setProperty('--vol-percent', `${perc}%`);
+  globalVolumeInput.style.setProperty('--vol-percent', `${perc}%`);
 };
 
 const updateVolumePercent = (volume) => {
@@ -138,7 +138,7 @@ const updateVolumePercent = (volume) => {
 };
 
 const updateMuteButton = () => {
-  footerMuteBtn.innerHTML = isMuted ? unmuteSVG : muteSVG;
+  globalMuteBtn.innerHTML = isMuted ? unmuteSVG : muteSVG;
 };
 
 /**
@@ -154,14 +154,14 @@ function updateFooter(audio, playBtn, idx) {
 
   if (audio || playBtn) {
     const paused = audio ? audio.paused : playBtn.innerHTML === playSVG;
-    footerPlayBtn.innerHTML = paused ? playSVG : pauseSVG;
-    footerPlayBtn.disabled = false;
-    footerPlayBtn._linkedAudio = audio || null;
-    footerPlayBtn._linkedPlayBtn = playBtn || null;
-    footerPlayBtn._linkedIndex = Number.isInteger(idx) ? idx : -1;
+    globalPlayBtn.innerHTML = paused ? playSVG : pauseSVG;
+    globalPlayBtn.disabled = false;
+    globalPlayBtn._linkedAudio = audio || null;
+    globalPlayBtn._linkedPlayBtn = playBtn || null;
+    globalPlayBtn._linkedIndex = Number.isInteger(idx) ? idx : -1;
 
     if (audio) {
-      footerVolumeInput.value = audio.volume;
+      globalVolumeInput.value = audio.volume;
       updateVolumeBar(audio.volume);
       updateVolumePercent(audio.volume);
     } else {
@@ -169,11 +169,11 @@ function updateFooter(audio, playBtn, idx) {
       updateVolumePercent(1);
     }
   } else {
-    footerPlayBtn.innerHTML = playSVG;
-    footerPlayBtn.disabled = true;
-    footerPlayBtn._linkedAudio = null;
-    footerPlayBtn._linkedPlayBtn = null;
-    footerPlayBtn._linkedIndex = -1;
+    globalPlayBtn.innerHTML = playSVG;
+    globalPlayBtn.disabled = true;
+    globalPlayBtn._linkedAudio = null;
+    globalPlayBtn._linkedPlayBtn = null;
+    globalPlayBtn._linkedIndex = -1;
     updateVolumeBar(1);
     updateVolumePercent(1);
   }
@@ -303,7 +303,7 @@ function updateMediaSession(idx, playbackState = 'none') {
  */
 async function togglePlay(direction) {
   let audio, playBtn;
-  let idx = Number.isInteger(footerPlayBtn._linkedIndex) ? footerPlayBtn._linkedIndex : -1;
+  let idx = Number.isInteger(globalPlayBtn._linkedIndex) ? globalPlayBtn._linkedIndex : -1;
 
   // Determine index
   if (!audio) {
@@ -353,7 +353,7 @@ async function togglePlay(direction) {
       playBtn.innerHTML = pauseSVG;
       playBtn.setAttribute('aria-pressed', 'true');
     }
-    footerPlayBtn.innerHTML = pauseSVG;
+    globalPlayBtn.innerHTML = pauseSVG;
     playingIndex = idx;
     // Sync hash & scroll to active track
     const id = tracks[playingIndex]?.container?.id;
@@ -370,7 +370,7 @@ async function togglePlay(direction) {
       playBtn.innerHTML = playSVG;
       playBtn.setAttribute('aria-pressed', 'false');
     }
-    footerPlayBtn.innerHTML = playSVG;
+    globalPlayBtn.innerHTML = playSVG;
     updateMediaSession(playingIndex, 'paused');
   }
 }
@@ -383,7 +383,7 @@ async function togglePlay(direction) {
  * Creates a track block, waveform, audio element, and attaches all behaviors.
  * Returns an object with references needed by global controls.
  */
-function createtrackItemDivent(data, idx) {
+function createTrackElement(data, idx) {
   // Data shape:
   // [ filename, artist, title, date, genre, durationSec, detailsHTML (comment), coverBase64, ampJSON, hash ]
   const dataFileName = data[0];
@@ -553,7 +553,7 @@ function createtrackItemDivent(data, idx) {
   updateCanvasWidthAndDraw();
 
   /* End-of-track handler: reset and advance */
-  audioElement.addEventListener('ended', () => { footerNextBtn.click(); });
+  audioElement.addEventListener('ended', () => { globalNextBtn.click(); });
 
   /* Align the URL anchor with the active track when playback begins */
   audioElement.addEventListener('play', () => {
@@ -771,7 +771,7 @@ function createtrackItemDivent(data, idx) {
 ============================================================================ */
 
 /* Volume slider: propagate to all tracks, update UI and mute state */
-footerVolumeInput.addEventListener('input', e => {
+globalVolumeInput.addEventListener('input', e => {
   const vol = parseFloat(e.target.value);
   tracks.forEach(({ audio }) => {
     if (audio) audio.volume = vol;
@@ -791,14 +791,14 @@ footerVolumeInput.addEventListener('input', e => {
 });
 
 /* Volume slider mouse wheel adjustment */
-footerVolumeInput.addEventListener('wheel', e => {
+globalVolumeInput.addEventListener('wheel', e => {
   e.preventDefault();
   const delta = e.deltaY || e.detail || e.wheelDelta;
   const step = 0.05;
-  let vol = parseFloat(footerVolumeInput.value);
+  let vol = parseFloat(globalVolumeInput.value);
   vol += delta < 0 ? step : -step;
   vol = Math.min(1, Math.max(0, vol));
-  footerVolumeInput.value = vol;
+  globalVolumeInput.value = vol;
   tracks.forEach(({ audio }) => {
     if (audio) audio.volume = vol;
   });
@@ -816,12 +816,12 @@ footerVolumeInput.addEventListener('wheel', e => {
   updateMuteButton();
 }, { passive: false });
 
-/* Footer mute */
-footerMuteBtn.addEventListener('click', () => {
+/* Global mute */
+globalMuteBtn.addEventListener('click', () => {
   isMuted = !isMuted;
   updateMuteButton();
 
-  const currentVolume = parseFloat(footerVolumeInput.value);
+  const currentVolume = parseFloat(globalVolumeInput.value);
 
   if (isMuted) {
     // Save the current volume from the slider
@@ -841,17 +841,17 @@ footerMuteBtn.addEventListener('click', () => {
   updateVolumeBar(isMuted ? 0 : prevVolume);
   updateVolumePercent(isMuted ? 0 : prevVolume);
   // Also update the volume slider value to reflect mute state
-  footerVolumeInput.value = isMuted ? 0 : prevVolume;
+  globalVolumeInput.value = isMuted ? 0 : prevVolume;
 });
 
-/* Footer play/pause */
-footerPlayBtn.addEventListener('click', () => { void togglePlay(); });
+/* Global play/pause */
+globalPlayBtn.addEventListener('click', () => { void togglePlay(); });
 
-/* Footer previous */
-footerPrevBtn.addEventListener('click', () => { void togglePlay(-1); });
+/* Global previous */
+globalPrevBtn.addEventListener('click', () => { void togglePlay(-1); });
 
-/* Footer next */
-footerNextBtn.addEventListener('click', () => { void togglePlay(+1); });
+/* Global next */
+globalNextBtn.addEventListener('click', () => { void togglePlay(+1); });
 
 /* Keyboard shortcuts: Space (toggle), Up/Down (prev/next), M/Numpad0 (mute), Left/Right (seek) */
 window.addEventListener('keydown', e => {
@@ -874,7 +874,7 @@ window.addEventListener('keydown', e => {
     // mute
     case 'KeyM':
       e.preventDefault();
-      footerMuteBtn.click();
+      globalMuteBtn.click();
       break;
     // seek left/right
     case 'ArrowRight':
@@ -923,7 +923,7 @@ const playlistRoot = document.getElementById('playlist-container');
 
 // Build all track elements from musicData and attach to the DOM
 musicData.forEach((trackData, i) => {
-  const trackObj = createtrackItemDivent(trackData, i);
+  const trackObj = createTrackElement(trackData, i);
   tracks.push(trackObj);
   playlistRoot.appendChild(trackObj.container);
 });
@@ -950,11 +950,11 @@ window.addEventListener('load', function () {
     }
   }
 
-  // Footer icons and controls initial state
-  footerPlayBtn.innerHTML = playSVG;
+  // Global icons and controls initial state
+  globalPlayBtn.innerHTML = playSVG;
   updateMuteButton();
-  footerPrevBtn.innerHTML = prevSVG;
-  footerNextBtn.innerHTML = nextSVG;
+  globalPrevBtn.innerHTML = prevSVG;
+  globalNextBtn.innerHTML = nextSVG;
 
   // Volume initial state
   updateVolumeBar(1);
