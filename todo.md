@@ -5,7 +5,8 @@
 - in `analyze_music.py` handling for missing id3 tags with warnings 
 - in `scripts.js` check function safePlay(audio)
 - in `index.html`/`scripts.js` add loading screen (because music.js can get big)
-- prevent default behavior on mobile browser to highlight interactive elements when touched
+- in `styles.css` check flawed .track-details-btn::after rotation
+- replace volume slider input[type=input] with div
 
 # Maybe later
 - in `analyze_music.py` better date handling
