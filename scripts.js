@@ -217,15 +217,15 @@ function updateMediaSession(idx, playbackState = 'none') {
   const t = tracks[idx];
   if (!t) return;
 
-  const mediaArtist = t.container.querySelector('.track-artist')?.textContent || '';
-  const mediaTitle = t.container.querySelector('.track-title')?.textContent || '';
+  const artist = t.container.querySelector('.track-artist')?.textContent || '';
+  const title = t.container.querySelector('.track-title')?.textContent || '';
   const imgEl = t.container.querySelector('.track-cover-img');
   const artworkSrc = imgEl?.src || '';
 
   try {
     navigator.mediaSession.metadata = new MediaMetadata({
-      mediaTitle,
-      mediaArtist,
+      title,
+      artist,
       album: '',
       artwork: artworkSrc ? [{ src: artworkSrc, sizes: '512x512', type: 'image/png' }] : []
     });
@@ -265,20 +265,15 @@ function updateMediaSession(idx, playbackState = 'none') {
       if (playingIndex < tracks.length - 1) togglePlay(+1);
     });
 
-    // Seek backward (default 10 seconds)
-    mediaSession.setActionHandler('seekbackward', (details) => {
+    // Seek to specific position (for seekbar)
+    mediaSession.setActionHandler('seekto', (details) => {
       const audio = tracks[playingIndex]?.audio;
       if (!audio) return;
-      const skip = (details.seekOffset || 10);
-      audio.currentTime = Math.max(audio.currentTime - skip, 0);
-    });
-
-    // Seek forward (default 10 seconds)
-    mediaSession.setActionHandler('seekforward', (details) => {
-      const audio = tracks[playingIndex]?.audio;
-      if (!audio) return;
-      const skip = (details.seekOffset || 10);
-      audio.currentTime = Math.min(audio.currentTime + skip, audio.duration || Infinity);
+      if (details.fastSeek && typeof audio.fastSeek === 'function') {
+        audio.fastSeek(details.seekTime);
+      } else {
+        audio.currentTime = details.seekTime;
+      }
     });
 
     // Stop action pauses and resets playback
