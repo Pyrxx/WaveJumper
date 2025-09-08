@@ -433,17 +433,24 @@ canvas.track-waveform-canvas {
   align-items: center;
   justify-content: center;
 }
-#footer-controls .playback-button {
-  margin-right: 10px;
+#global-playback-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
 }
-
 /* Volume controls styling */
 #volume-controls {
   margin-left: 20px;
   display: flex;
   align-items: center;
 }
-
+/* Hide volume controls on mobile devices */
+@media (pointer: coarse), (hover: none) {
+  #volume-controls {
+    display: none;
+  }
+}
 #volume-percent {
   font-size: 0.9rem;
   white-space: nowrap;
@@ -465,7 +472,6 @@ canvas.track-waveform-canvas {
   display: flex;
   align-items: center;
 }
-
 #volume-fill {
   height: 100%;
   background: var(--highlight);
@@ -473,6 +479,7 @@ canvas.track-waveform-canvas {
   width: var(--vol-percent);
   pointer-events: none;
 }
+
 /* SVG icon sizing */
 svg.play-icon, svg.pause-icon, svg.prev-icon, svg.next-icon, svg.mute-icon, svg.unmute-icon {
   width: 20px;
