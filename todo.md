@@ -6,7 +6,7 @@
 - in `scripts.js` check function safePlay(audio)
 - in `index.html`/`scripts.js` add loading screen (because music.js can get big)
 - in `styles.css` check flawed .track-details-btn::after rotation
-- replace volume slider input[type=input] with div
+- starting another track should close details from previous one
 
 # Maybe later
 - in `analyze_music.py` better date handling
