@@ -445,6 +445,27 @@ function updatePlayStateUI(audio, playBtn) {
 }
 
 /**
+ * Updates the active track class
+ * @param {number} activeIndex - Index of the active track
+ */
+function updateActiveTrackClass(activeIndex) {
+  // Remove active-track class from all tracks
+  playerState.tracks.forEach((track, index) => {
+    if (track.container) {
+      track.container.classList.remove('active-track');
+    }
+  });
+
+  // Add active-track class to the active track
+  if (activeIndex >= 0 && activeIndex < playerState.tracks.length) {
+    const activeTrack = playerState.tracks[activeIndex];
+    if (activeTrack && activeTrack.container) {
+      activeTrack.container.classList.add('active-track');
+    }
+  }
+}
+
+/**
  * Updates UI for pause state
  * @param {HTMLAudioElement} audio - Audio element
  * @param {HTMLElement} playBtn - Play button element
@@ -494,6 +515,7 @@ async function togglePlay(direction) {
     }
     scrollToCenterElement(target.container);
     updateMediaSession(targetIndex, 'playing');
+    updateActiveTrackClass(targetIndex);
   } else {
     audio.pause();
     updatePauseStateUI(audio, btnPlay);
@@ -501,6 +523,7 @@ async function togglePlay(direction) {
       playerState.playingIndex = -1;
     }
     updateMediaSession(targetIndex, 'paused');
+    updateActiveTrackClass(targetIndex);
   }
 }
 
@@ -707,6 +730,7 @@ function createTrackElement(data, idx) {
       updateFooter(audioElement, trackPlayPauseBtn, idx);
       scrollToCenterElement(trackItemDiv);
       updateMediaSession(idx, 'playing');
+      updateActiveTrackClass(idx);
     } else {
       audioElement.pause();
       trackPlayPauseBtn.innerHTML = ICONS.play;
@@ -714,6 +738,7 @@ function createTrackElement(data, idx) {
       if (playerState.playingIndex === idx) playerState.playingIndex = -1;
       updateFooter(null, null, -1);
       updateMediaSession(idx, 'paused');
+      updateActiveTrackClass(idx);
     }
   });
 
