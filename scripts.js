@@ -2,57 +2,90 @@
   Global constants, configuration, and reusable helpers
 ============================================================================ */
 
-/* SVG icon markup placeholders (inline SVG or strings) */
-const playSVG = `<svg class="play-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><polygon points="6 4 20 12 6 20" /></svg>`;
-const pauseSVG = `<svg class="pause-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
-const prevSVG = `<svg class="prev-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>`;
-const nextSVG = `<svg class="next-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>`;
-const muteSVG = `<svg class="unmute-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 9 9 9 13 5 13 19 9 15 3 15"></polygon><path d="M16.5 7.5a5 5 0 0 1 0 9"></path></svg>`;
-const unmuteSVG = `<svg class="mute-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 9 9 9 13 5 13 19 9 15 3 15"></polygon><line x1="18" y1="9" x2="22" y2="15"></line><line x1="22" y1="9" x2="18" y2="15"></line></svg>`;
+/**
+ * SVG icon markup placeholders (inline SVG or strings)
+ */
+const ICONS = {
+  play: `<svg class="play-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><polygon points="6 4 20 12 6 20" /></svg>`,
+  pause: `<svg class="pause-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`,
+  prev: `<svg class="prev-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>`,
+  next: `<svg class="next-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>`,
+  mute: `<svg class="unmute-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 9 9 9 13 5 13 19 9 15 3 15"></polygon><path d="M16.5 7.5a5 5 0 0 1 0 9"></path></svg>`,
+  unmute: `<svg class="mute-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 9 9 9 13 5 13 19 9 15 3 15"></polygon><line x1="18" y1="9" x2="22" y2="15"></line><line x1="22" y1="9" x2="18" y2="15"></line></svg>`
+};
 
-/* Sizing and interaction constants */
-const BAR_WIDTH = 2;                 // Width of each waveform bar in pixels
-const SPACE_WIDTH = 1;               // Space between bars in pixels
-const WAVE_PEAK_UNIT = BAR_WIDTH + SPACE_WIDTH; // Total pixels per peak (bar + space)
-const WAVE_HEIGHT = 80;             // Canvas height for waveform visualization
-const SKIP_SMALL = 10;               // Arrow keys seek step in seconds
-const SKIP_LARGE = 60;               // Shift + Arrow keys seek step in seconds
-const VOLUME_STEP = 0.05;            // Mouse wheel volume step
-const RESIZE_DEBOUNCE_MS = 100;      // Debounce delay for resize-driven re-render
-
-/* Formatting helpers */
-const formatTime = (seconds, showHours = false) => {
-  if (!Number.isFinite(seconds) || seconds <= 0) return '0:00';
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-  if (showHours || h > 0) {
-    return `${h}:${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
-  } else {
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
+/**
+ * Waveform visualization constants
+ */
+const WAVEFORM_CONFIG = {
+  barWidth: 2,           // Width of each waveform bar in pixels
+  spaceWidth: 1,         // Space between bars in pixels
+  height: 80,            // Canvas height for waveform visualization
+  get peakUnit() {
+    return this.barWidth + this.spaceWidth;
   }
 };
 
-/* Numeric helpers */
+/**
+ * Playback and interaction constants
+ */
+const PLAYBACK_CONFIG = {
+  skipSmall: 10,         // Arrow keys seek step in seconds
+  skipLarge: 60,         // Shift + Arrow keys seek step in seconds
+  volumeStep: 0.05,      // Mouse wheel volume step
+  resizeDebounceMs: 100  // Debounce delay for resize-driven re-render
+};
+
+/**
+ * Formats time in seconds to a string (MM:SS or HH:MM:SS)
+ * @param {number} seconds - Time in seconds
+ * @param {boolean} [showHours=false] - Whether to show hours
+ * @returns {string} Formatted time string
+ */
+const formatTime = (seconds, showHours = false) => {
+  if (!Number.isFinite(seconds) || seconds <= 0) return '0:00';
+
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+
+  if (showHours || h > 0) {
+    return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+  return `${m}:${String(s).padStart(2, '0')}`;
+};
+
+/**
+ * Clamps a value between 0 and 1
+ * @param {number} v - Value to clamp
+ * @returns {number} Clamped value
+ */
 const clamp01 = v => Math.min(Math.max(v, 0), 1);
 
-/* ID slugging for anchors and element IDs */
+/**
+ * Converts a string to a URL-friendly slug
+ * @param {string} input - String to slugify
+ * @returns {string} Slugified string
+ */
 function slugify(input) {
   return String(input)
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')   // replace non-alphanumerics with dashes
-    .replace(/^-+|-+$/g, '')       // trim leading/trailing dashes
-    .replace(/-{2,}/g, '-');       // collapse multiple dashes
+    .replace(/[^a-z0-9]+/g, '-')   // Replace non-alphanumerics with dashes
+    .replace(/^-+|-+$/g, '')       // Trim leading/trailing dashes
+    .replace(/-{2,}/g, '-');       // Collapse multiple dashes
 }
 
-/* CSS variable fetch consolidated to limit layout/style work per draw */
+/**
+ * Gets CSS theme variables for waveform rendering
+ * @returns {Object} Theme variables
+ */
 function getThemeVars() {
   const root = document.documentElement;
-  const cs = getComputedStyle(root);
+  const style = getComputedStyle(root);
   return {
-    highlight: cs.getPropertyValue('--highlight').trim(),
-    highlightAlt: cs.getPropertyValue('--highlight-alt').trim(),
-    textColorMuted: cs.getPropertyValue('--text-color-muted').trim()
+    highlight: style.getPropertyValue('--highlight').trim(),
+    highlightAlt: style.getPropertyValue('--highlight-alt').trim(),
+    textColorMuted: style.getPropertyValue('--text-color-muted').trim()
   };
 }
 
@@ -63,6 +96,17 @@ function getThemeVars() {
 /**
  * Renders a bar waveform to a canvas 2D context.
  * Colors are resolved once per call and reused for all bars.
+ */
+/**
+ * Renders a bar waveform to a canvas 2D context
+ * @param {CanvasRenderingContext2D} ctx - Canvas context
+ * @param {number[]} ampData - Amplitude data
+ * @param {number} progress - Playback progress (0-1)
+ * @param {number} width - Canvas width
+ * @param {number} height - Canvas height
+ * @param {number} [hoverIndex=-1] - Index of hovered bar
+ * @param {boolean} [isHovering=false] - Whether hovering is active
+ * @param {Object} [theme=null] - Theme colors
  */
 function drawWaveform(ctx, ampData, progress, width, height, hoverIndex = -1, isHovering = false, theme = null) {
   if (!ctx) return;
@@ -75,7 +119,7 @@ function drawWaveform(ctx, ampData, progress, width, height, hoverIndex = -1, is
   for (let i = 0; i < total; i++) {
     const amp = ampData[i];
     const barHeight = amp * height;
-    const x = i * WAVE_PEAK_UNIT;
+    const x = i * WAVEFORM_CONFIG.peakUnit;
 
     let fillStyle;
     if (isHovering && i === hoverIndex) {
@@ -87,12 +131,15 @@ function drawWaveform(ctx, ampData, progress, width, height, hoverIndex = -1, is
     }
 
     ctx.fillStyle = fillStyle;
-    ctx.fillRect(x, midY - barHeight / 2, BAR_WIDTH, barHeight);
+    ctx.fillRect(x, midY - barHeight / 2, WAVEFORM_CONFIG.barWidth, barHeight);
   }
 }
 
 /**
- * Interpolates amplitude data to a target length using linear interpolation.
+ * Interpolates amplitude data to a target length using linear interpolation
+ * @param {number[]} inputData - Original amplitude data
+ * @param {number} targetLength - Desired length
+ * @returns {number[]} Interpolated data
  */
 function interpolateAmplitudeData(inputData, targetLength) {
   const output = new Array(targetLength);
@@ -114,58 +161,81 @@ function interpolateAmplitudeData(inputData, targetLength) {
   Player state, DOM references, and cross-component utilities
 ============================================================================ */
 
-let tracks = [];              // Array of track objects with references and helpers
-let playingIndex = -1;        // Index of currently playing track, -1 if none
-let isMuted = false;          // Global mute toggle
-let prevVolume = 1;           // Last non-zero volume (for unmute restore)
-
-const globalPlayBtn = document.querySelector('#btn-play-pause');
-const globalPrevBtn = document.querySelector('#btn-prev');
-const globalNextBtn = document.querySelector('#btn-next');
-const globalMuteBtn = document.querySelector('#btn-mute');
-const globalVolumeSlider = document.querySelector('#volume-slider');
-const volumeFill = document.querySelector('#volume-fill');
-const volumePercentSpan = document.querySelector('#volume-percent');
-
-/* Global volume UI helpers */
-const updateVolumeBar = (volume) => {
-  const perc = Math.round(volume * 100);
-  globalVolumeSlider.style.setProperty('--vol-percent', `${perc}%`);
-  if (volumeFill) {
-    volumeFill.style.width = `${perc}%`;
-  }
-};
-
-const updateVolumePercent = (volume) => {
-  const percent = Math.round(volume * 100);
-  volumePercentSpan.textContent = `${percent}%`;
-};
-
-const updateMuteButton = () => {
-  globalMuteBtn.innerHTML = isMuted ? unmuteSVG : muteSVG;
+/**
+ * Player state
+ */
+const playerState = {
+  tracks: [],           // Array of track objects with references and helpers
+  playingIndex: -1,     // Index of currently playing track, -1 if none
+  isMuted: false,       // Global mute toggle
+  prevVolume: 1,        // Last non-zero volume (for unmute restore)
+  currentVolume: 1      // Current volume level
 };
 
 /**
- * Synchronizes footer controls with an active track. Links the footer
- * play button to the specific audio/button so that footer actions resolve
- * to the correct track without rediscovery.
+ * DOM element references
+ */
+const domElements = {
+  playBtn: document.querySelector('#btn-play-pause'),
+  prevBtn: document.querySelector('#btn-prev'),
+  nextBtn: document.querySelector('#btn-next'),
+  muteBtn: document.querySelector('#btn-mute'),
+  volumeSlider: document.querySelector('#volume-slider'),
+  volumeFill: document.querySelector('#volume-fill'),
+  volumePercent: document.querySelector('#volume-percent'),
+  playlistContainer: document.getElementById('playlist-container')
+};
+
+/**
+ * Updates the volume bar UI
+ * @param {number} volume - Volume level (0-1)
+ */
+function updateVolumeBar(volume) {
+  const perc = Math.round(volume * 100);
+  domElements.volumeSlider.style.setProperty('--vol-percent', `${perc}%`);
+  if (domElements.volumeFill) {
+    domElements.volumeFill.style.width = `${perc}%`;
+  }
+}
+
+/**
+ * Updates the volume percentage display
+ * @param {number} volume - Volume level (0-1)
+ */
+function updateVolumePercent(volume) {
+  const percent = Math.round(volume * 100);
+  domElements.volumePercent.textContent = `${percent}%`;
+}
+
+/**
+ * Updates the mute button icon
+ */
+function updateMuteButton() {
+  domElements.muteBtn.innerHTML = playerState.isMuted ? ICONS.unmute : ICONS.mute;
+}
+
+/**
+ * Synchronizes footer controls with an active track
+ * @param {HTMLAudioElement} audio - Audio element
+ * @param {HTMLElement} playBtn - Play button element
+ * @param {number} idx - Track index
  */
 function updateFooter(audio, playBtn, idx) {
-  if ((audio || playBtn) && Number.isInteger(idx) && tracks[idx]) {
-    if (!audio) audio = tracks[idx].audio;
-    if (!playBtn) playBtn = tracks[idx].btnPlay;
+  if ((audio || playBtn) && Number.isInteger(idx) && playerState.tracks[idx]) {
+    if (!audio) audio = playerState.tracks[idx].audio;
+    if (!playBtn) playBtn = playerState.tracks[idx].btnPlay;
   }
 
   if (audio || playBtn) {
-    const paused = audio ? audio.paused : playBtn.innerHTML === playSVG;
-    globalPlayBtn.innerHTML = paused ? playSVG : pauseSVG;
-    globalPlayBtn.disabled = false;
-    globalPlayBtn._linkedAudio = audio || null;
-    globalPlayBtn._linkedPlayBtn = playBtn || null;
-    globalPlayBtn._linkedIndex = Number.isInteger(idx) ? idx : -1;
+    const paused = audio ? audio.paused : playBtn.innerHTML === ICONS.play;
+    domElements.playBtn.innerHTML = paused ? ICONS.play : ICONS.pause;
+    domElements.playBtn.disabled = false;
+    domElements.playBtn._linkedAudio = audio || null;
+    domElements.playBtn._linkedPlayBtn = playBtn || null;
+    domElements.playBtn._linkedIndex = Number.isInteger(idx) ? idx : -1;
 
     if (audio) {
-      globalVolumeSlider.value = audio.volume;
+      domElements.volumeSlider.value = audio.volume;
       updateVolumeBar(audio.volume);
       updateVolumePercent(audio.volume);
     } else {
@@ -173,17 +243,20 @@ function updateFooter(audio, playBtn, idx) {
       updateVolumePercent(1);
     }
   } else {
-    globalPlayBtn.innerHTML = playSVG;
-    globalPlayBtn.disabled = true;
-    globalPlayBtn._linkedAudio = null;
-    globalPlayBtn._linkedPlayBtn = null;
-    globalPlayBtn._linkedIndex = -1;
+    domElements.playBtn.innerHTML = ICONS.play;
+    domElements.playBtn.disabled = true;
+    domElements.playBtn._linkedAudio = null;
+    domElements.playBtn._linkedPlayBtn = null;
+    domElements.playBtn._linkedIndex = -1;
     updateVolumeBar(1);
     updateVolumePercent(1);
   }
 }
 
-/* Scrolls the given element into vertical center of the viewport */
+/**
+ * Scrolls an element to the vertical center of the viewport
+ * @param {HTMLElement} element - Element to scroll to
+ */
 function scrollToCenterElement(element) {
   const bounding = element.getBoundingClientRect();
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
@@ -195,35 +268,35 @@ function scrollToCenterElement(element) {
   });
 }
 
-/* Plays audio with promise handling. Returns true on success, false on block. */
+/**
+ * Plays audio with error handling
+ * @param {HTMLAudioElement} audio - Audio element to play
+ * @returns {Promise<boolean>} True if playback started successfully
+ */
 async function safePlay(audio) {
   try {
     await audio.play();
     return true;
   } catch (err) {
-    // Autoplay may be blocked if not triggered by a user gesture.
-    // A subsequent user interaction should enable playback.
-    console && console.warn && console.warn('Playback requires a user interaction to start.');
+    console.warn('Playback requires a user interaction to start.');
     return false;
   }
 }
 
 /**
- * Updates Media Session metadata and playback state for a given track index.
- * Also sets complete action handlers for lock screen and notification integration.
- * 
- * @param {number} idx - Index of the track in the global tracks array.
- * @param {string} playbackState - Playback state: 'none', 'paused', or 'playing'.
+ * Updates Media Session metadata and playback state
+ * @param {number} idx - Track index
+ * @param {string} [playbackState='none'] - Playback state: 'none', 'paused', or 'playing'
  */
 function updateMediaSession(idx, playbackState = 'none') {
   if (!('mediaSession' in navigator)) return;
 
-  const t = tracks[idx];
-  if (!t) return;
+  const track = playerState.tracks[idx];
+  if (!track) return;
 
-  const artist = t.container.querySelector('.track-artist')?.textContent || '';
-  const title = t.container.querySelector('.track-title')?.textContent || '';
-  const imgEl = t.container.querySelector('.track-cover-img');
+  const artist = track.container.querySelector('.track-artist')?.textContent || '';
+  const title = track.container.querySelector('.track-title')?.textContent || '';
+  const imgEl = track.container.querySelector('.track-cover-img');
   const artworkSrc = imgEl?.src || '';
 
   try {
@@ -241,37 +314,37 @@ function updateMediaSession(idx, playbackState = 'none') {
 
     const mediaSession = navigator.mediaSession;
 
-    // Play action handler toggles play/pause
+    // Play action handler
     mediaSession.setActionHandler('play', async () => {
-      const audio = tracks[playingIndex]?.audio;
+      const audio = playerState.tracks[playerState.playingIndex]?.audio;
       if (audio && audio.paused) {
         try { await audio.play(); } catch { }
-        updateMediaSession(playingIndex, 'playing');
+        updateMediaSession(playerState.playingIndex, 'playing');
       }
     });
 
-    // Pause action handler toggles play/pause
+    // Pause action handler
     mediaSession.setActionHandler('pause', () => {
-      const audio = tracks[playingIndex]?.audio;
+      const audio = playerState.tracks[playerState.playingIndex]?.audio;
       if (audio && !audio.paused) {
         audio.pause();
-        updateMediaSession(playingIndex, 'paused');
+        updateMediaSession(playerState.playingIndex, 'paused');
       }
     });
 
-    // Previous track action moves to previous if possible
+    // Previous track action
     mediaSession.setActionHandler('previoustrack', () => {
-      if (playingIndex > 0) togglePlay(-1);
+      if (playerState.playingIndex > 0) togglePlay(-1);
     });
 
-    // Next track action moves to next if possible
+    // Next track action
     mediaSession.setActionHandler('nexttrack', () => {
-      if (playingIndex < tracks.length - 1) togglePlay(+1);
+      if (playerState.playingIndex < playerState.tracks.length - 1) togglePlay(+1);
     });
 
-    // Seek to specific position (for seekbar)
+    // Seek action
     mediaSession.setActionHandler('seekto', (details) => {
-      const audio = tracks[playingIndex]?.audio;
+      const audio = playerState.tracks[playerState.playingIndex]?.audio;
       if (!audio) return;
       if (details.fastSeek && typeof audio.fastSeek === 'function') {
         audio.fastSeek(details.seekTime);
@@ -280,17 +353,16 @@ function updateMediaSession(idx, playbackState = 'none') {
       }
     });
 
-    // Stop action pauses and resets playback
+    // Stop action
     mediaSession.setActionHandler('stop', () => {
-      const audio = tracks[playingIndex]?.audio;
+      const audio = playerState.tracks[playerState.playingIndex]?.audio;
       if (!audio) return;
       audio.pause();
       audio.currentTime = 0;
-      updateMediaSession(playingIndex, 'paused');
+      updateMediaSession(playerState.playingIndex, 'paused');
     });
 
   } catch (err) {
-    // Silently ignore non-critical errors, but log for debugging
     console.warn('Failed to update Media Session:', err);
   }
 }
@@ -300,82 +372,135 @@ function updateMediaSession(idx, playbackState = 'none') {
 ============================================================================ */
 
 /**
- * Centralized play/pause/resume toggle. 
- * Resolves a target track if the global footer control is not yet linked, 
- * then toggles that track and keeps UI/state in sync.
- * @param {any} direction -1/+1 for previous/next track.
+ * Gets the current track index based on various factors
+ * @returns {number} Current track index
  */
-async function togglePlay(direction) {
-  let audio, playBtn;
-  let idx = Number.isInteger(globalPlayBtn._linkedIndex) ? globalPlayBtn._linkedIndex : -1;
-
-  // Determine index
-  if (!audio) {
-    if (playingIndex !== -1) {
-      idx = playingIndex;
-    } else {
-      const hashId = (window.location.hash || '').slice(1);
-      idx = tracks.findIndex(t => t.container.id === hashId);
-      if (idx < 0) idx = 0;
-    }
+function getCurrentTrackIndex() {
+  // Check if we have a linked index from the footer button
+  if (Number.isInteger(domElements.playBtn._linkedIndex)) {
+    return domElements.playBtn._linkedIndex;
   }
 
-  // Handle prev/next logic
+  // Check if we have a currently playing track
+  if (playerState.playingIndex !== -1) {
+    return playerState.playingIndex;
+  }
+
+  // Check URL hash for a track ID
+  const hashId = (window.location.hash || '').slice(1);
+  const hashIndex = playerState.tracks.findIndex(t => t.container.id === hashId);
+  if (hashIndex >= 0) {
+    return hashIndex;
+  }
+
+  // Default to first track
+  return 0;
+}
+
+/**
+ * Gets the next track index based on direction
+ * @param {number} currentIndex - Current track index
+ * @param {number} direction - -1 for previous, +1 for next
+ * @returns {number|null} Next track index or null if invalid
+ */
+function getNextTrackIndex(currentIndex, direction) {
+  let nextIndex = currentIndex;
+
   if (direction === -1) { // Previous
-    if (idx > 0) idx -= 1;
-    else return; // no previous
+    nextIndex = currentIndex > 0 ? currentIndex - 1 : null;
   } else if (direction === +1) { // Next
-    if (idx < tracks.length - 1) idx += 1;
-    else return; // no next
+    nextIndex = currentIndex < playerState.tracks.length - 1 ? currentIndex + 1 : null;
   }
 
-  const target = tracks[idx];
-  if (!target) return;
-  audio = target.audio;
-  playBtn = target.btnPlay;
-  updateFooter(audio, playBtn, idx);
+  return nextIndex !== null && playerState.tracks[nextIndex] ? nextIndex : null;
+}
 
-  // Always reset position to start for prev/next
-  if (direction !== undefined) audio.currentTime = 0;
-
-  const wasPaused = audio.paused;
-  // Pause others & reset their play btn
-  tracks.forEach(({ audio: a, btnPlay: b }) => {
-    if (a && a !== audio) {
-      a.pause();
-      if (b) {
-        b.innerHTML = playSVG;
-        b.setAttribute('aria-pressed', 'false');
+/**
+ * Pauses all tracks except the specified one
+ * @param {HTMLAudioElement} excludeAudio - Audio element to exclude from pausing
+ */
+function pauseAllOtherTracks(excludeAudio) {
+  playerState.tracks.forEach(({ audio, btnPlay }) => {
+    if (audio && audio !== excludeAudio) {
+      audio.pause();
+      if (btnPlay) {
+        btnPlay.innerHTML = ICONS.play;
+        btnPlay.setAttribute('aria-pressed', 'false');
       }
     }
   });
+}
 
-  if (wasPaused || direction !== undefined) {
+/**
+ * Updates UI for play state
+ * @param {HTMLAudioElement} audio - Audio element
+ * @param {HTMLElement} playBtn - Play button element
+ */
+function updatePlayStateUI(audio, playBtn) {
+  if (playBtn) {
+    playBtn.innerHTML = ICONS.pause;
+    playBtn.setAttribute('aria-pressed', 'true');
+  }
+  domElements.playBtn.innerHTML = ICONS.pause;
+}
+
+/**
+ * Updates UI for pause state
+ * @param {HTMLAudioElement} audio - Audio element
+ * @param {HTMLElement} playBtn - Play button element
+ */
+function updatePauseStateUI(audio, playBtn) {
+  if (playBtn) {
+    playBtn.innerHTML = ICONS.play;
+    playBtn.setAttribute('aria-pressed', 'false');
+  }
+  domElements.playBtn.innerHTML = ICONS.play;
+}
+
+/**
+ * Centralized play/pause/resume toggle
+ * @param {number} [direction] -1 for previous track, +1 for next track
+ */
+async function togglePlay(direction) {
+  const currentIndex = getCurrentTrackIndex();
+  const targetIndex = direction !== undefined ? getNextTrackIndex(currentIndex, direction) : currentIndex;
+
+  if (targetIndex === null) return;
+
+  const target = playerState.tracks[targetIndex];
+  if (!target) return;
+
+  const { audio, btnPlay } = target;
+
+  // Always reset position to start for prev/next
+  if (direction !== undefined) {
+    audio.currentTime = 0;
+  }
+
+  updateFooter(audio, btnPlay, targetIndex);
+  pauseAllOtherTracks(audio);
+
+  if (audio.paused || direction !== undefined) {
     const ok = await safePlay(audio);
     if (!ok) return;
-    if (playBtn) {
-      playBtn.innerHTML = pauseSVG;
-      playBtn.setAttribute('aria-pressed', 'true');
-    }
-    globalPlayBtn.innerHTML = pauseSVG;
-    playingIndex = idx;
+
+    updatePlayStateUI(audio, btnPlay);
+    playerState.playingIndex = targetIndex;
+
     // Sync hash & scroll to active track
-    const id = tracks[playingIndex]?.container?.id;
-    if (id && window.location.hash.slice(1) !== id) {
-      history.pushState({}, '', `#${id}`);
+    const trackId = target.container.id;
+    if (window.location.hash.slice(1) !== trackId) {
+      history.pushState({}, '', `#${trackId}`);
     }
-    if (tracks[playingIndex]?.container) {
-      scrollToCenterElement(tracks[playingIndex].container);
-    }
-    updateMediaSession(playingIndex, 'playing');
+    scrollToCenterElement(target.container);
+    updateMediaSession(targetIndex, 'playing');
   } else {
     audio.pause();
-    if (playBtn) {
-      playBtn.innerHTML = playSVG;
-      playBtn.setAttribute('aria-pressed', 'false');
+    updatePauseStateUI(audio, btnPlay);
+    if (playerState.playingIndex === targetIndex) {
+      playerState.playingIndex = -1;
     }
-    globalPlayBtn.innerHTML = playSVG;
-    updateMediaSession(playingIndex, 'paused');
+    updateMediaSession(targetIndex, 'paused');
   }
 }
 
@@ -384,32 +509,26 @@ async function togglePlay(direction) {
 ============================================================================ */
 
 /**
- * Creates a track block, waveform, audio element, and attaches all behaviors.
- * Returns an object with references needed by global controls.
+ * Creates a track block, waveform, audio element, and attaches all behaviors
+ * @param {Array} data - Track data array
+ * @param {number} idx - Track index
+ * @returns {Object} Track object with references
  */
 function createTrackElement(data, idx) {
-  // Data shape:
-  // [ filename, artist, title, date, genre, durationSec, detailsHTML (comment), coverBase64, ampJSON, hash ]
-  const dataFileName = data[0];
-  const dataArtist = data[1];
-  const dataTitle = data[2];
-  const dataDateStr = data[3];
-  const dataGenre = data[4];
-  const dataDurationSec = data[5];
-  const dataDetailsHTML = data[6];
-  const dataCoverBase64 = data[7];
-  const dataAmpRaw = JSON.parse(data[8]);
+  // Data shape: [filename, artist, title, date, genre, durationSec, detailsHTML, coverBase64, ampJSON, hash]
+  const [filename, artist, title, dateStr, genre, durationSec, detailsHTML, coverBase64, ampJSON] = data;
+  const ampData = JSON.parse(ampJSON);
 
   const trackItemDiv = document.createElement('div');
   trackItemDiv.className = 'track-item content';
-  trackItemDiv.id = slugify(dataFileName);
+  trackItemDiv.id = slugify(filename);
 
   const trackMainDiv = document.createElement('div');
   trackMainDiv.className = 'track-main';
 
   const trackBgDiv = document.createElement('div');
   trackBgDiv.className = 'track-bg';
-  
+
   const trackCoverDiv = document.createElement('div');
   trackCoverDiv.className = 'track-cover';
 
@@ -418,40 +537,40 @@ function createTrackElement(data, idx) {
   trackCoverLink.className = 'track-cover-link';
 
   const trackCoverImg = document.createElement('img');
-  trackCoverImg.alt = `${dataTitle} cover art`;
+  trackCoverImg.alt = `${title} cover art`;
   trackCoverImg.className = 'track-cover-img';
-  trackCoverImg.src = `data:image/png;base64,${dataCoverBase64}`;
+  trackCoverImg.src = `data:image/png;base64,${coverBase64}`;
 
   trackCoverLink.appendChild(trackCoverImg);
   trackCoverDiv.appendChild(trackCoverLink);
 
   const trackPlayPauseBtn = document.createElement('button');
   trackPlayPauseBtn.className = 'playback-button track-btn-play-pause';
-  trackPlayPauseBtn.setAttribute('aria-label', `Play or Pause ${dataTitle} by ${dataArtist}`);
+  trackPlayPauseBtn.setAttribute('aria-label', `Play or Pause ${title} by ${artist}`);
   trackPlayPauseBtn.setAttribute('aria-pressed', 'false');
-  trackPlayPauseBtn.innerHTML = playSVG;
+  trackPlayPauseBtn.innerHTML = ICONS.play;
 
   const trackArtistTitleDiv = document.createElement('div');
   trackArtistTitleDiv.className = 'track-artist-title';
 
   const trackArtistDiv = document.createElement('div');
   trackArtistDiv.className = 'track-artist';
-  trackArtistDiv.textContent = dataArtist;
+  trackArtistDiv.textContent = artist;
 
   const trackTitleDiv = document.createElement('div');
   trackTitleDiv.className = 'track-title';
-  trackTitleDiv.textContent = dataTitle;
+  trackTitleDiv.textContent = title;
 
   trackArtistTitleDiv.appendChild(trackArtistDiv);
   trackArtistTitleDiv.appendChild(trackTitleDiv);
 
   const trackGenreDiv = document.createElement('div');
   trackGenreDiv.className = 'track-genre';
-  trackGenreDiv.textContent = dataGenre;
+  trackGenreDiv.textContent = genre;
 
   const trackDateDiv = document.createElement('div');
   trackDateDiv.className = 'track-date';
-  trackDateDiv.textContent = dataDateStr;
+  trackDateDiv.textContent = dateStr;
 
   const trackTimeDiv = document.createElement('div');
   trackTimeDiv.className = 'track-time';
@@ -462,7 +581,7 @@ function createTrackElement(data, idx) {
 
   const trackDurationDiv = document.createElement('div');
   trackDurationDiv.className = 'track-duration';
-  trackDurationDiv.textContent = formatTime(dataDurationSec);
+  trackDurationDiv.textContent = formatTime(durationSec);
 
   trackTimeDiv.appendChild(trackPlayPosDiv);
   trackTimeDiv.appendChild(trackDurationDiv);
@@ -472,7 +591,7 @@ function createTrackElement(data, idx) {
 
   const trackWaveformCanvas = document.createElement('canvas');
   trackWaveformCanvas.className = 'track-waveform-canvas';
-  trackWaveformCanvas.height = WAVE_HEIGHT;
+  trackWaveformCanvas.height = WAVEFORM_CONFIG.height;
   trackWaveformDiv.appendChild(trackWaveformCanvas);
 
   trackBgDiv.style.cssText = `background-image: url(${trackCoverImg.src});`;
@@ -482,7 +601,7 @@ function createTrackElement(data, idx) {
   trackMainDiv.appendChild(trackPlayPauseBtn);
   trackMainDiv.appendChild(trackArtistTitleDiv);
 
-  if (dataGenre != null && String(dataGenre).trim() !== '') {
+  if (genre != null && String(genre).trim() !== '') {
     trackMainDiv.appendChild(trackGenreDiv);
   }
 
@@ -492,7 +611,7 @@ function createTrackElement(data, idx) {
   const trackDetailsDiv = document.createElement('div');
   trackDetailsDiv.className = 'track-details';
 
-  if (dataDetailsHTML != null && String(dataDetailsHTML).trim() !== '') {
+  if (detailsHTML != null && String(detailsHTML).trim() !== '') {
     const trackDetailsBtn = document.createElement('button');
     trackDetailsBtn.className = 'track-details-btn';
     trackDetailsBtn.setAttribute('aria-expanded', 'false');
@@ -500,7 +619,7 @@ function createTrackElement(data, idx) {
 
     const trackDetailsContentDiv = document.createElement('div');
     trackDetailsContentDiv.className = 'track-details-content';
-    trackDetailsContentDiv.innerHTML = dataDetailsHTML;
+    trackDetailsContentDiv.innerHTML = detailsHTML;
 
     trackDetailsBtn.addEventListener('click', () => {
       const expanded = trackDetailsBtn.getAttribute('aria-expanded') === 'true';
@@ -519,7 +638,7 @@ function createTrackElement(data, idx) {
 
   // Hidden audio element
   const audioElement = document.createElement('audio');
-  audioElement.src = `music/${dataFileName}`;
+  audioElement.src = `music/${filename}`;
   audioElement.preload = 'metadata';
   audioElement.style.display = 'none';
   audioElement.controls = false;
@@ -528,18 +647,17 @@ function createTrackElement(data, idx) {
   /* Waveform drawing context and amplitude preparation */
   const ctx = trackWaveformCanvas.getContext('2d');
   const themeCache = getThemeVars();
-  const durationFallback = dataDurationSec;
 
   let currentCanvasWidth = 0;
-  let ampData = [];
+  let waveformData = [];
 
   const updateCanvasWidthAndDraw = () => {
     let containerWidth = trackWaveformDiv.offsetWidth || 0;
 
     // Ensure width is divisible by peak unit for a perfect grid
-    for (let reduction = 0; reduction <= (WAVE_PEAK_UNIT - 1); reduction++) {
+    for (let reduction = 0; reduction <= (WAVEFORM_CONFIG.peakUnit - 1); reduction++) {
       const testWidth = containerWidth - reduction;
-      if (testWidth % WAVE_PEAK_UNIT === 0) {
+      if (testWidth % WAVEFORM_CONFIG.peakUnit === 0) {
         containerWidth = testWidth;
         break;
       }
@@ -548,16 +666,16 @@ function createTrackElement(data, idx) {
     trackWaveformCanvas.width = containerWidth;
     currentCanvasWidth = containerWidth;
 
-    const numPeaks = containerWidth > 0 ? Math.floor(containerWidth / WAVE_PEAK_UNIT) : 0;
-    ampData = interpolateAmplitudeData(dataAmpRaw, Math.max(numPeaks, 0));
+    const numPeaks = containerWidth > 0 ? Math.floor(containerWidth / WAVEFORM_CONFIG.peakUnit) : 0;
+    waveformData = interpolateAmplitudeData(ampData, Math.max(numPeaks, 0));
 
-    drawWaveform(ctx, ampData, 0, trackWaveformCanvas.width, WAVE_HEIGHT, -1, false, themeCache);
+    drawWaveform(ctx, waveformData, 0, trackWaveformCanvas.width, WAVEFORM_CONFIG.height, -1, false, themeCache);
   };
 
   updateCanvasWidthAndDraw();
 
   /* End-of-track handler: reset and advance */
-  audioElement.addEventListener('ended', () => { globalNextBtn.click(); });
+  audioElement.addEventListener('ended', () => { domElements.nextBtn.click(); });
 
   /* Align the URL anchor with the active track when playback begins */
   audioElement.addEventListener('play', () => {
@@ -572,10 +690,10 @@ function createTrackElement(data, idx) {
   trackPlayPauseBtn.addEventListener('click', async () => {
     if (audioElement.paused) {
       // Pause other tracks
-      tracks.forEach(({ audio, btnPlay }, i) => {
+      playerState.tracks.forEach(({ audio, btnPlay }, i) => {
         if (i !== idx) {
           audio?.pause();
-          btnPlay.innerHTML = playSVG;
+          btnPlay.innerHTML = ICONS.play;
           btnPlay.setAttribute('aria-pressed', 'false');
         }
       });
@@ -583,17 +701,17 @@ function createTrackElement(data, idx) {
       const ok = await safePlay(audioElement);
       if (!ok) return;
 
-      trackPlayPauseBtn.innerHTML = pauseSVG;
+      trackPlayPauseBtn.innerHTML = ICONS.pause;
       trackPlayPauseBtn.setAttribute('aria-pressed', 'true');
-      playingIndex = idx;
+      playerState.playingIndex = idx;
       updateFooter(audioElement, trackPlayPauseBtn, idx);
       scrollToCenterElement(trackItemDiv);
       updateMediaSession(idx, 'playing');
     } else {
       audioElement.pause();
-      trackPlayPauseBtn.innerHTML = playSVG;
+      trackPlayPauseBtn.innerHTML = ICONS.play;
       trackPlayPauseBtn.setAttribute('aria-pressed', 'false');
-      if (playingIndex === idx) playingIndex = -1;
+      if (playerState.playingIndex === idx) playerState.playingIndex = -1;
       updateFooter(null, null, -1);
       updateMediaSession(idx, 'paused');
     }
@@ -609,7 +727,7 @@ function createTrackElement(data, idx) {
   }
 
   function getDuration() {
-    return audioElement.duration || durationFallback || 0;
+    return audioElement.duration || durationSec || 0;
   }
 
   function getProgressRatio() {
@@ -631,7 +749,7 @@ function createTrackElement(data, idx) {
   }
 
   function renderWave({ progressRatio, hoverIdx = -1, showHover = false }) {
-    drawWaveform(ctx, ampData, progressRatio, currentCanvasWidth, WAVE_HEIGHT, hoverIdx, showHover, themeCache);
+    drawWaveform(ctx, waveformData, progressRatio, currentCanvasWidth, WAVEFORM_CONFIG.height, hoverIdx, showHover, themeCache);
   }
 
   function updateTimeDisplay(showHover, ratioForHover = null) {
@@ -654,9 +772,9 @@ function createTrackElement(data, idx) {
   }
 
   function getHoverIndexFromRatio(ratio) {
-    if (!ampData || !ampData.length) return -1;
-    const i = Math.floor(clamp01(ratio) * ampData.length);
-    return Math.min(Math.max(i, 0), ampData.length - 1);
+    if (!waveformData || !waveformData.length) return -1;
+    const i = Math.floor(clamp01(ratio) * waveformData.length);
+    return Math.min(Math.max(i, 0), waveformData.length - 1);
   }
 
   function updateHoverFromEvent(ev, seeking = false) {
@@ -745,6 +863,31 @@ function createTrackElement(data, idx) {
   trackWaveformCanvas.addEventListener('pointerleave', onPointerLeave);
   trackWaveformCanvas.addEventListener('pointercancel', onPointerCancel);
 
+  /**
+   * Adjusts width to fit waveform grid
+   * @param {number} width - Original width
+   * @param {number} unit - Grid unit size
+   * @returns {number} Adjusted width
+   */
+  function adjustWidthToGrid(width, unit) {
+    for (let reduction = 0; reduction <= (unit - 1); reduction++) {
+      const testWidth = width - reduction;
+      if (testWidth % unit === 0) {
+        return testWidth;
+      }
+    }
+    return width;
+  }
+
+  /**
+   * Calculates number of peaks for waveform
+   * @param {number} containerWidth - Container width
+   * @returns {number} Number of peaks
+   */
+  function calculateNumPeaks(containerWidth) {
+    return containerWidth > 0 ? Math.floor(containerWidth / WAVEFORM_CONFIG.peakUnit) : 0;
+  }
+
   // Debounced resize handling
   let resizeTimer = null;
   const resizeObserver = new ResizeObserver(() => {
@@ -752,11 +895,11 @@ function createTrackElement(data, idx) {
     resizeTimer = setTimeout(() => {
       updateCanvasWidthAndDraw();
       if (!audioElement.paused) {
-        const curDur = audioElement.duration || durationFallback;
+        const curDur = audioElement.duration || durationSec;
         const prog = curDur ? audioElement.currentTime / curDur : 0;
-        drawWaveform(ctx, ampData, prog, currentCanvasWidth, WAVE_HEIGHT, -1, false, themeCache);
+        drawWaveform(ctx, waveformData, prog, currentCanvasWidth, WAVEFORM_CONFIG.height, -1, false, themeCache);
       }
-    }, RESIZE_DEBOUNCE_MS);
+    }, PLAYBACK_CONFIG.resizeDebounceMs);
   });
   resizeObserver.observe(trackWaveformDiv);
 
@@ -775,21 +918,29 @@ function createTrackElement(data, idx) {
 ============================================================================ */
 
 /* Volume slider: propagate to all tracks, update UI and mute state */
-let currentVolume = 1;
 let isDragging = false;
 
+/**
+ * Calculates volume from slider position
+ * @param {number} clientX - Mouse position
+ * @returns {number} Volume level (0-1)
+ */
 const updateVolumeFromPosition = (clientX) => {
-  const rect = globalVolumeSlider.getBoundingClientRect();
+  const rect = domElements.volumeSlider.getBoundingClientRect();
   const clickPosition = Math.min(Math.max(0, clientX - rect.left), rect.width);
   const vol = clickPosition / rect.width;
   return Math.min(1, Math.max(0, vol));
 };
 
+/**
+ * Handles volume changes
+ * @param {number} vol - New volume level (0-1)
+ */
 const handleVolumeChange = (vol) => {
-  currentVolume = vol;
+  playerState.currentVolume = vol;
 
   // Set volume on all audio elements
-  tracks.forEach(({ audio }) => {
+  playerState.tracks.forEach(({ audio }) => {
     if (audio) {
       audio.volume = vol;
     }
@@ -800,11 +951,11 @@ const handleVolumeChange = (vol) => {
 
   // Update mute button state when volume reaches 0 or non-zero
   if (vol === 0) {
-    isMuted = true;
-    prevVolume = 0.05; // Set prevVolume to 0.05 when volume reaches 0
-  } else if (isMuted) {
-    isMuted = false;
-    prevVolume = vol; // Update prevVolume to current volume
+    playerState.isMuted = true;
+    playerState.prevVolume = 0.05; // Set prevVolume to 0.05 when volume reaches 0
+  } else if (playerState.isMuted) {
+    playerState.isMuted = false;
+    playerState.prevVolume = vol; // Update prevVolume to current volume
   }
   updateMuteButton();
 };
@@ -822,7 +973,7 @@ const onPointerUp = () => {
   document.removeEventListener('pointerup', onPointerUp);
 };
 
-globalVolumeSlider.addEventListener('pointerdown', (e) => {
+domElements.volumeSlider.addEventListener('pointerdown', (e) => {
   isDragging = true;
   const vol = updateVolumeFromPosition(e.clientX || e.touches[0].clientX);
   handleVolumeChange(vol);
@@ -830,33 +981,33 @@ globalVolumeSlider.addEventListener('pointerdown', (e) => {
   document.addEventListener('pointerup', onPointerUp);
 });
 
-globalVolumeSlider.addEventListener('click', (e) => {
+domElements.volumeSlider.addEventListener('click', (e) => {
   const vol = updateVolumeFromPosition(e.clientX);
   handleVolumeChange(vol);
 });
 
 /* Volume slider mouse wheel adjustment */
-globalVolumeSlider.addEventListener('wheel', e => {
+domElements.volumeSlider.addEventListener('wheel', e => {
   e.preventDefault();
   const delta = e.deltaY || e.detail || e.wheelDelta;
-  const step = 0.05;
-  let vol = currentVolume;
+  const step = PLAYBACK_CONFIG.volumeStep;
+  let vol = playerState.currentVolume;
   vol += delta < 0 ? step : -step;
   vol = Math.min(1, Math.max(0, vol));
   handleVolumeChange(vol);
 }, { passive: false });
 
 /* Global mute */
-globalMuteBtn.addEventListener('click', () => {
-  isMuted = !isMuted;
+domElements.muteBtn.addEventListener('click', () => {
+  playerState.isMuted = !playerState.isMuted;
   updateMuteButton();
 
-  if (isMuted) {
+  if (playerState.isMuted) {
     // Save the current volume
-    prevVolume = currentVolume === 0 ? 0.05 : currentVolume;
+    playerState.prevVolume = playerState.currentVolume === 0 ? 0.05 : playerState.currentVolume;
 
     // Mute all tracks regardless of playback state
-    tracks.forEach(({ audio }) => {
+    playerState.tracks.forEach(({ audio }) => {
       if (audio) audio.volume = 0;
     });
 
@@ -865,26 +1016,26 @@ globalMuteBtn.addEventListener('click', () => {
     updateVolumePercent(0);
   } else {
     // Unmute all tracks using the saved volume
-    const volumeToRestore = prevVolume;
-    tracks.forEach(({ audio }) => {
+    const volumeToRestore = playerState.prevVolume;
+    playerState.tracks.forEach(({ audio }) => {
       if (audio) audio.volume = volumeToRestore;
     });
 
     // Update UI to show restored volume
-    currentVolume = volumeToRestore;
+    playerState.currentVolume = volumeToRestore;
     updateVolumeBar(volumeToRestore);
     updateVolumePercent(volumeToRestore);
   }
 });
 
 /* Global play/pause */
-globalPlayBtn.addEventListener('click', () => { void togglePlay(); });
+domElements.playBtn.addEventListener('click', () => { void togglePlay(); });
 
 /* Global previous */
-globalPrevBtn.addEventListener('click', () => { void togglePlay(-1); });
+domElements.prevBtn.addEventListener('click', () => { void togglePlay(-1); });
 
 /* Global next */
-globalNextBtn.addEventListener('click', () => { void togglePlay(+1); });
+domElements.nextBtn.addEventListener('click', () => { void togglePlay(+1); });
 
 /* Keyboard shortcuts: Space (toggle), Up/Down (prev/next), M/Numpad0 (mute), Left/Right (seek) */
 window.addEventListener('keydown', e => {
@@ -907,17 +1058,17 @@ window.addEventListener('keydown', e => {
     // mute
     case 'KeyM':
       e.preventDefault();
-      globalMuteBtn.click();
+      domElements.muteBtn.click();
       break;
     // seek left/right
     case 'ArrowRight':
     case 'ArrowLeft': {
-      if (playingIndex === -1) return;
-      const currentAudio = tracks[playingIndex]?.audio;
+      if (playerState.playingIndex === -1) return;
+      const currentAudio = playerState.tracks[playerState.playingIndex]?.audio;
       if (!currentAudio) return;
       e.preventDefault();
       const direction = e.code === 'ArrowRight' ? 1 : -1;
-      const skipAmount = e.shiftKey ? SKIP_LARGE : SKIP_SMALL;
+      const skipAmount = e.shiftKey ? PLAYBACK_CONFIG.skipLarge : PLAYBACK_CONFIG.skipSmall;
       let newTime = currentAudio.currentTime + direction * skipAmount;
       if (newTime < 0) newTime = 0;
       if (currentAudio.duration && newTime > currentAudio.duration) newTime = currentAudio.duration;
@@ -929,7 +1080,10 @@ window.addEventListener('keydown', e => {
   }
 });
 
-/* Anchors: intercept clicks to center elements and push hash */
+/**
+ * Handles anchor clicks for smooth scrolling
+ * @param {Event} event - Click event
+ */
 const handleAnchorClick = (event) => {
   const targetId = event.currentTarget.getAttribute('href').substring(1);
   const targetElement = document.getElementById(targetId);
@@ -952,13 +1106,11 @@ window.addEventListener('popstate', () => {
   Initialization and lifecycle
 ============================================================================ */
 
-const playlistRoot = document.getElementById('playlist-container');
-
 // Build all track elements from musicData and attach to the DOM
 musicData.forEach((trackData, i) => {
   const trackObj = createTrackElement(trackData, i);
-  tracks.push(trackObj);
-  playlistRoot.appendChild(trackObj.container);
+  playerState.tracks.push(trackObj);
+  domElements.playlistContainer.appendChild(trackObj.container);
 });
 
 // Anchor click binding for centered scroll behavior
@@ -969,8 +1121,8 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 // Align initial hash and center the corresponding element (default to first track)
 window.addEventListener('load', function () {
   let hash = window.location.hash;
-  if (!hash && tracks.length > 0) {
-    const firstTrackId = tracks[0].container.id;
+  if (!hash && playerState.tracks.length > 0) {
+    const firstTrackId = playerState.tracks[0].container.id;
     hash = `#${firstTrackId}`;
     history.pushState({}, '', hash);
   }
@@ -984,10 +1136,10 @@ window.addEventListener('load', function () {
   }
 
   // Global icons and controls initial state
-  globalPlayBtn.innerHTML = playSVG;
+  domElements.playBtn.innerHTML = ICONS.play;
   updateMuteButton();
-  globalPrevBtn.innerHTML = prevSVG;
-  globalNextBtn.innerHTML = nextSVG;
+  domElements.prevBtn.innerHTML = ICONS.prev;
+  domElements.nextBtn.innerHTML = ICONS.next;
 
   // Volume initial state
   updateVolumeBar(1);
@@ -996,7 +1148,7 @@ window.addEventListener('load', function () {
 
 // Pause all audio on page unload
 window.addEventListener('pagehide', () => {
-  tracks.forEach(({ audio }) => {
+  playerState.tracks.forEach(({ audio }) => {
     audio?.pause();
   });
 });
