@@ -123,14 +123,14 @@ const globalPlayBtn = document.querySelector('#btn-play-pause');
 const globalPrevBtn = document.querySelector('#btn-prev');
 const globalNextBtn = document.querySelector('#btn-next');
 const globalMuteBtn = document.querySelector('#btn-mute');
-const globalVolumeInput = document.querySelector('#volume-slider');
+const globalVolumeSlider = document.querySelector('#volume-slider');
 const volumeFill = document.querySelector('#volume-fill');
 const volumePercentSpan = document.querySelector('#volume-percent');
 
 /* Global volume UI helpers */
 const updateVolumeBar = (volume) => {
   const perc = Math.round(volume * 100);
-  globalVolumeInput.style.setProperty('--vol-percent', `${perc}%`);
+  globalVolumeSlider.style.setProperty('--vol-percent', `${perc}%`);
   if (volumeFill) {
     volumeFill.style.width = `${perc}%`;
   }
@@ -165,7 +165,7 @@ function updateFooter(audio, playBtn, idx) {
     globalPlayBtn._linkedIndex = Number.isInteger(idx) ? idx : -1;
 
     if (audio) {
-      globalVolumeInput.value = audio.volume;
+      globalVolumeSlider.value = audio.volume;
       updateVolumeBar(audio.volume);
       updateVolumePercent(audio.volume);
     } else {
@@ -779,7 +779,7 @@ let currentVolume = 1;
 let isDragging = false;
 
 const updateVolumeFromPosition = (clientX) => {
-  const rect = globalVolumeInput.getBoundingClientRect();
+  const rect = globalVolumeSlider.getBoundingClientRect();
   const clickPosition = Math.min(Math.max(0, clientX - rect.left), rect.width);
   const vol = clickPosition / rect.width;
   return Math.min(1, Math.max(0, vol));
@@ -822,7 +822,7 @@ const onPointerUp = () => {
   document.removeEventListener('pointerup', onPointerUp);
 };
 
-globalVolumeInput.addEventListener('pointerdown', (e) => {
+globalVolumeSlider.addEventListener('pointerdown', (e) => {
   isDragging = true;
   const vol = updateVolumeFromPosition(e.clientX || e.touches[0].clientX);
   handleVolumeChange(vol);
@@ -830,13 +830,13 @@ globalVolumeInput.addEventListener('pointerdown', (e) => {
   document.addEventListener('pointerup', onPointerUp);
 });
 
-globalVolumeInput.addEventListener('click', (e) => {
+globalVolumeSlider.addEventListener('click', (e) => {
   const vol = updateVolumeFromPosition(e.clientX);
   handleVolumeChange(vol);
 });
 
 /* Volume slider mouse wheel adjustment */
-globalVolumeInput.addEventListener('wheel', e => {
+globalVolumeSlider.addEventListener('wheel', e => {
   e.preventDefault();
   const delta = e.deltaY || e.detail || e.wheelDelta;
   const step = 0.05;
