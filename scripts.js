@@ -124,12 +124,16 @@ const globalPrevBtn = document.querySelector('#btn-prev');
 const globalNextBtn = document.querySelector('#btn-next');
 const globalMuteBtn = document.querySelector('#btn-mute');
 const globalVolumeInput = document.querySelector('#volume-slider');
+const volumeFill = document.querySelector('#volume-fill');
 const volumePercentSpan = document.querySelector('#volume-percent');
 
 /* Global volume UI helpers */
 const updateVolumeBar = (volume) => {
   const perc = Math.round(volume * 100);
   globalVolumeInput.style.setProperty('--vol-percent', `${perc}%`);
+  if (volumeFill) {
+    volumeFill.style.width = `${perc}%`;
+  }
 };
 
 const updateVolumePercent = (volume) => {
@@ -771,11 +775,26 @@ function createTrackElement(data, idx) {
 ============================================================================ */
 
 /* Volume slider: propagate to all tracks, update UI and mute state */
-globalVolumeInput.addEventListener('input', e => {
-  const vol = parseFloat(e.target.value);
+let currentVolume = 1;
+let isDragging = false;
+
+const updateVolumeFromPosition = (clientX) => {
+  const rect = globalVolumeInput.getBoundingClientRect();
+  const clickPosition = Math.min(Math.max(0, clientX - rect.left), rect.width);
+  const vol = clickPosition / rect.width;
+  return Math.min(1, Math.max(0, vol));
+};
+
+const handleVolumeChange = (vol) => {
+  currentVolume = vol;
+
+  // Set volume on all audio elements
   tracks.forEach(({ audio }) => {
-    if (audio) audio.volume = vol;
+    if (audio) {
+      audio.volume = vol;
+    }
   });
+
   updateVolumeBar(vol);
   updateVolumePercent(vol);
 
@@ -788,6 +807,32 @@ globalVolumeInput.addEventListener('input', e => {
     prevVolume = vol; // Update prevVolume to current volume
   }
   updateMuteButton();
+};
+
+const onPointerMove = (e) => {
+  if (isDragging) {
+    const vol = updateVolumeFromPosition(e.clientX || e.touches[0].clientX);
+    handleVolumeChange(vol);
+  }
+};
+
+const onPointerUp = () => {
+  isDragging = false;
+  document.removeEventListener('pointermove', onPointerMove);
+  document.removeEventListener('pointerup', onPointerUp);
+};
+
+globalVolumeInput.addEventListener('pointerdown', (e) => {
+  isDragging = true;
+  const vol = updateVolumeFromPosition(e.clientX || e.touches[0].clientX);
+  handleVolumeChange(vol);
+  document.addEventListener('pointermove', onPointerMove);
+  document.addEventListener('pointerup', onPointerUp);
+});
+
+globalVolumeInput.addEventListener('click', (e) => {
+  const vol = updateVolumeFromPosition(e.clientX);
+  handleVolumeChange(vol);
 });
 
 /* Volume slider mouse wheel adjustment */
@@ -795,25 +840,10 @@ globalVolumeInput.addEventListener('wheel', e => {
   e.preventDefault();
   const delta = e.deltaY || e.detail || e.wheelDelta;
   const step = 0.05;
-  let vol = parseFloat(globalVolumeInput.value);
+  let vol = currentVolume;
   vol += delta < 0 ? step : -step;
   vol = Math.min(1, Math.max(0, vol));
-  globalVolumeInput.value = vol;
-  tracks.forEach(({ audio }) => {
-    if (audio) audio.volume = vol;
-  });
-  updateVolumeBar(vol);
-  updateVolumePercent(vol);
-
-  // Update mute button state when volume reaches 0 or non-zero
-  if (vol === 0) {
-    isMuted = true;
-    prevVolume = 0.05; // Set prevVolume to 0.05 when volume reaches 0
-  } else if (isMuted) {
-    isMuted = false;
-    prevVolume = vol; // Update prevVolume to current volume
-  }
-  updateMuteButton();
+  handleVolumeChange(vol);
 }, { passive: false });
 
 /* Global mute */
@@ -821,27 +851,30 @@ globalMuteBtn.addEventListener('click', () => {
   isMuted = !isMuted;
   updateMuteButton();
 
-  const currentVolume = parseFloat(globalVolumeInput.value);
-
   if (isMuted) {
-    // Save the current volume from the slider
-    prevVolume = (currentVolume === 0 ? 0.05 : currentVolume);
+    // Save the current volume
+    prevVolume = currentVolume === 0 ? 0.05 : currentVolume;
 
     // Mute all tracks regardless of playback state
     tracks.forEach(({ audio }) => {
       if (audio) audio.volume = 0;
     });
-  } else {
-    // Unmute all tracks using the volume from the slider
-    tracks.forEach(({ audio }) => {
-      if (audio) audio.volume = prevVolume;
-    });
-  }
 
-  updateVolumeBar(isMuted ? 0 : prevVolume);
-  updateVolumePercent(isMuted ? 0 : prevVolume);
-  // Also update the volume slider value to reflect mute state
-  globalVolumeInput.value = isMuted ? 0 : prevVolume;
+    // Update UI to show muted state
+    updateVolumeBar(0);
+    updateVolumePercent(0);
+  } else {
+    // Unmute all tracks using the saved volume
+    const volumeToRestore = prevVolume;
+    tracks.forEach(({ audio }) => {
+      if (audio) audio.volume = volumeToRestore;
+    });
+
+    // Update UI to show restored volume
+    currentVolume = volumeToRestore;
+    updateVolumeBar(volumeToRestore);
+    updateVolumePercent(volumeToRestore);
+  }
 });
 
 /* Global play/pause */

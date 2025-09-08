@@ -454,48 +454,24 @@ canvas.track-waveform-canvas {
 #volume-slider {
   width: 120px;
   cursor: pointer;
-  appearance: none;
   background-color: var(--background);
   height: 20px;
   border-radius: 5px;
   position: relative;
   overflow: hidden;
   --vol-percent: 100%;
-  -webkit-appearance: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: pan-y;
+  display: flex;
+  align-items: center;
 }
-#volume-slider::-webkit-slider-runnable-track {
-  height: 20px;
-  background: linear-gradient(to right,
-  var(--highlight) 0%, var(--highlight) var(--vol-percent),
-  var(--background) var(--vol-percent), var(--background) 100%);
-  border-radius: 5px;
-}
-#volume-slider::-moz-range-track {
-  height: 20px;
-  background: linear-gradient(to right,
-  var(--highlight) 0%, var(--highlight) var(--vol-percent),
-  var(--background) var(--vol-percent), var(--background) 100%);
-  border-radius: 5px;
-  border: none;
-}
-/* Hide slider thumb/knob */
-#volume-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 0;
-  height: 0;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-}
-#volume-slider::-moz-range-thumb {
-  width: 0;
-  height: 0;
-  border: none;
-  background: transparent;
-  cursor: pointer;
+
+#volume-fill {
+  height: 100%;
+  background: var(--highlight);
+  border-radius: 5px 0 0 5px;
+  width: var(--vol-percent);
+  pointer-events: none;
 }
 /* SVG icon sizing */
 svg.play-icon, svg.pause-icon, svg.prev-icon, svg.next-icon, svg.mute-icon, svg.unmute-icon {

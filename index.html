@@ -24,7 +24,9 @@
       <!-- Volume control with mute icon and percentage display -->
       <div id="volume-controls">
         <button id="btn-mute" aria-label="Mute/Unmute volume" title="Mute/Unmute volume"></button>
-        <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="1" aria-label="Volume control" />
+        <div id="volume-slider" aria-label="Volume control" tabindex="0">
+          <div id="volume-fill"></div>
+        </div>
         <span id="volume-percent" class="volume-percent">100%</span>
       </div>
     </div>
