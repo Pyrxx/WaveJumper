@@ -514,12 +514,12 @@ canvas.track-waveform-canvas {
 }
 
 /* SVG icons */
-svg.play-icon, svg.pause-icon, svg.prev-icon, svg.next-icon, svg.mute-icon, svg.unmute-icon {
+svg {
   width: 20px;
   height: 20px;
   display: block;
 }
-svg.play-icon, svg.pause-icon, svg.prev-icon, svg.next-icon {
+svg.buffering-icon, svg.play-icon, svg.pause-icon, svg.prev-icon, svg.next-icon {
   fill: var(--playback-button-svg-fill);
   stroke: transparent;
 }

@@ -6,6 +6,7 @@
  * SVG icon markup placeholders (inline SVG or strings)
  */
 const ICONS = {
+  buffering: `<svg class="buffering-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10.72,19.9a8,8,0,0,1-6.5-9.79A7.77,7.77,0,0,1,10.4,4.16a8,8,0,0,1,9.49,6.52A1.54,1.54,0,0,0,21.38,12h.13a1.37,1.37,0,0,0,1.38-1.54,11,11,0,1,0-12.7,12.39A1.54,1.54,0,0,0,12,21.34h0A1.47,1.47,0,0,0,10.72,19.9Z"><animateTransform attributeName="transform" type="rotate" dur="0.75s" values="0 12 12;360 12 12" repeatCount="indefinite"/></path></svg>`,
   play: `<svg class="play-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><polygon points="6 4 20 12 6 20" /></svg>`,
   pause: `<svg class="pause-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`,
   prev: `<svg class="prev-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>`,
@@ -169,7 +170,8 @@ const playerState = {
   playingIndex: -1,     // Index of currently playing track, -1 if none
   isMuted: false,       // Global mute toggle
   prevVolume: 1,        // Last non-zero volume (for unmute restore)
-  currentVolume: 1      // Current volume level
+  currentVolume: 1,      // Current volume level
+  bufferingIndex: -1    // Index of track currently buffering, -1 if none
 };
 
 /**
@@ -251,6 +253,38 @@ function updateFooter(audio, playBtn, idx) {
     domElements.playBtn._linkedIndex = -1;
     updateVolumeBar(1);
     updateVolumePercent(1);
+  }
+}
+
+/**
+ * Updates UI for buffering state
+ * @param {number} idx - Track index that's buffering, or -1 if none
+ */
+function updateBufferingUI(idx) {
+  playerState.bufferingIndex = idx;
+
+  if (idx === -1) {
+    // Not buffering - restore appropriate play/pause state
+    const currentTrack = playerState.tracks[playerState.playingIndex];
+    if (currentTrack) {
+      const isPaused = currentTrack.audio.paused;
+      domElements.playBtn.innerHTML = isPaused ? ICONS.play : ICONS.pause;
+      currentTrack.btnPlay.innerHTML = isPaused ? ICONS.play : ICONS.pause;
+    }
+  } else {
+    // Only show buffering if this is the currently playing track
+    if (idx === playerState.playingIndex) {
+      // Buffering - update both global and track buttons
+      domElements.playBtn.innerHTML = ICONS.buffering;
+
+      // Update the specific track's play button
+      if (idx >= 0 && idx < playerState.tracks.length) {
+        const track = playerState.tracks[idx];
+        if (track && track.btnPlay) {
+          track.btnPlay.innerHTML = ICONS.buffering;
+        }
+      }
+    }
   }
 }
 
@@ -570,10 +604,11 @@ async function togglePlay(direction) {
   pauseAllOtherTracks(audio);
 
   if (audio.paused || direction !== undefined) {
+    scrollToCenterElement(target.container);
+
     const ok = await safePlay(audio);
     if (!ok) return;
 
-    updatePlayStateUI(audio, btnPlay);
     playerState.playingIndex = targetIndex;
 
     // Sync hash & scroll to active track
@@ -581,12 +616,13 @@ async function togglePlay(direction) {
     if (window.location.hash.slice(1) !== trackId) {
       history.pushState({}, '', `#${trackId}`);
     }
-    scrollToCenterElement(target.container);
     updateMediaSession(targetIndex, 'playing');
     updateActiveTrackClass(targetIndex);
     updateNowPlayingDisplay();
   } else {
     audio.pause();
+    // When pausing, stop buffering indication
+    updateBufferingUI(-1);
     updatePauseStateUI(audio, btnPlay);
     // Don't reset playingIndex when pausing - this keeps the "now playing" display visible
     updateMediaSession(targetIndex, 'paused');
@@ -735,6 +771,42 @@ function createTrackElement(data, idx) {
   audioElement.controls = false;
   trackItemDiv.appendChild(audioElement);
 
+  // Add buffering event listeners
+  audioElement.addEventListener('waiting', () => {
+    console.log(`Track ${idx} waiting (buffering)`);
+    updateBufferingUI(idx);
+  });
+
+  audioElement.addEventListener('playing', () => {
+    console.log(`Track ${idx} playing`);
+    updateBufferingUI(-1);
+  });
+
+  audioElement.addEventListener('seeked', () => {
+    console.log(`Track ${idx} seeked`);
+    // After seeking, check if we have enough buffered data
+    if (audioElement.buffered.length > 0) {
+      const bufferedEnd = audioElement.buffered.end(audioElement.buffered.length - 1);
+      if (bufferedEnd > audioElement.currentTime) {
+        updateBufferingUI(-1);
+      } else {
+        // Still buffering after seek
+        updateBufferingUI(idx);
+      }
+    }
+  });
+
+  audioElement.addEventListener('progress', () => {
+    // If we were buffering and now have enough data, stop showing buffering
+    if (playerState.bufferingIndex === idx && audioElement.buffered.length > 0) {
+      const bufferedEnd = audioElement.buffered.end(audioElement.buffered.length - 1);
+      if (bufferedEnd > audioElement.currentTime + 0.5) { // Add small buffer margin
+        console.log(`Track ${idx} progress - enough data buffered`);
+        updateBufferingUI(-1);
+      }
+    }
+  });
+
   /* Waveform drawing context and amplitude preparation */
   const ctx = trackWaveformCanvas.getContext('2d');
   const themeCache = getThemeVars();
@@ -792,7 +864,8 @@ function createTrackElement(data, idx) {
       const ok = await safePlay(audioElement);
       if (!ok) return;
 
-      trackPlayPauseBtn.innerHTML = ICONS.pause;
+      // Set to buffering initially - the playing event will update it when ready
+      updateBufferingUI(idx);
       trackPlayPauseBtn.setAttribute('aria-pressed', 'true');
       playerState.playingIndex = idx;
       updateFooter(audioElement, trackPlayPauseBtn, idx);
@@ -801,6 +874,8 @@ function createTrackElement(data, idx) {
       updateActiveTrackClass(idx);
     } else {
       audioElement.pause();
+      // When pausing, stop buffering indication
+      updateBufferingUI(-1);
       trackPlayPauseBtn.innerHTML = ICONS.play;
       trackPlayPauseBtn.setAttribute('aria-pressed', 'false');
       // Don't reset playingIndex when pausing - this keeps the "now playing" display visible
@@ -942,6 +1017,16 @@ function createTrackElement(data, idx) {
       updateHoverFromEvent(ev, false);
     } else {
       clearHover();
+    }
+
+    // After seeking, check buffering state
+    if (audioElement.buffered.length > 0) {
+      const bufferedEnd = audioElement.buffered.end(audioElement.buffered.length - 1);
+      if (bufferedEnd <= audioElement.currentTime) {
+        updateBufferingUI(idx);
+      } else {
+        updateBufferingUI(-1);
+      }
     }
   }
 
