@@ -183,7 +183,8 @@ const domElements = {
   volumeSlider: document.querySelector('#volume-slider'),
   volumeFill: document.querySelector('#volume-fill'),
   volumePercent: document.querySelector('#volume-percent'),
-  playlistContainer: document.getElementById('playlist-container')
+  tracklistDiv: document.getElementById('tracklist'),
+  nowPlaying: document.getElementById('now-playing')
 };
 
 /**
@@ -266,6 +267,73 @@ function scrollToCenterElement(element) {
     top: scrollToY,
     behavior: 'smooth'
   });
+}
+
+/**
+ * Updates the now-playing display with active track information
+ */
+function updateNowPlayingDisplay() {
+  const nowPlaying = domElements.nowPlaying;
+  if (!nowPlaying) return;
+
+  // Clear existing content
+  nowPlaying.innerHTML = '';
+
+  const activeIndex = playerState.playingIndex;
+  if (activeIndex === -1 || !playerState.tracks[activeIndex]) return;
+
+  const track = playerState.tracks[activeIndex];
+  const audio = track.audio;
+  const artist = track.container.querySelector('.track-artist')?.textContent || '';
+  const title = track.container.querySelector('.track-title')?.textContent || '';
+  const coverSrc = track.container.querySelector('.track-cover-img')?.src || '';
+  const duration = audio.duration || 0;
+
+  // Add aria-label to now-playing element
+  nowPlaying.setAttribute('aria-label', `Now playing: ${artist} - ${title}`);
+
+  // Create cover art div
+  const coverDiv = document.createElement('div');
+  coverDiv.className = 'now-playing-cover';
+
+  const coverImg = document.createElement('img');
+  coverImg.src = coverSrc;
+  coverImg.alt = `${title} cover art`;
+  coverImg.width = 30;
+  coverImg.height = 30;
+  coverImg.style.cursor = 'pointer';
+
+  nowPlaying.addEventListener('click', () => {
+    scrollToCenterElement(track.container);
+  });
+
+  coverDiv.appendChild(coverImg);
+
+  // Create artist-title div
+  const infoDiv = document.createElement('div');
+  infoDiv.className = 'now-playing-info';
+  infoDiv.textContent = `${artist} - ${title}`;
+
+  // Create time div
+  const timeDiv = document.createElement('div');
+  timeDiv.className = 'now-playing-time';
+
+  const playPosSpan = document.createElement('span');
+  playPosSpan.className = 'now-playing-play-pos';
+  playPosSpan.textContent = formatTime(audio.currentTime);
+
+  const durationSpan = document.createElement('span');
+  durationSpan.className = 'now-playing-duration';
+  durationSpan.textContent = formatTime(duration);
+
+  timeDiv.appendChild(playPosSpan);
+  timeDiv.appendChild(document.createTextNode(' | '));
+  timeDiv.appendChild(durationSpan);
+
+  // Append all to now-playing
+  nowPlaying.appendChild(coverDiv);
+  nowPlaying.appendChild(infoDiv);
+  nowPlaying.appendChild(timeDiv);
 }
 
 /**
@@ -516,14 +584,14 @@ async function togglePlay(direction) {
     scrollToCenterElement(target.container);
     updateMediaSession(targetIndex, 'playing');
     updateActiveTrackClass(targetIndex);
+    updateNowPlayingDisplay();
   } else {
     audio.pause();
     updatePauseStateUI(audio, btnPlay);
-    if (playerState.playingIndex === targetIndex) {
-      playerState.playingIndex = -1;
-    }
+    // Don't reset playingIndex when pausing - this keeps the "now playing" display visible
     updateMediaSession(targetIndex, 'paused');
     updateActiveTrackClass(targetIndex);
+    updateNowPlayingDisplay();
   }
 }
 
@@ -735,8 +803,7 @@ function createTrackElement(data, idx) {
       audioElement.pause();
       trackPlayPauseBtn.innerHTML = ICONS.play;
       trackPlayPauseBtn.setAttribute('aria-pressed', 'false');
-      if (playerState.playingIndex === idx) playerState.playingIndex = -1;
-      updateFooter(null, null, -1);
+      // Don't reset playingIndex when pausing - this keeps the "now playing" display visible
       updateMediaSession(idx, 'paused');
       updateActiveTrackClass(idx);
     }
@@ -837,6 +904,11 @@ function createTrackElement(data, idx) {
       renderWave({ progressRatio: prog, hoverIdx: -1, showHover: false });
       trackPlayPosDiv.textContent = formatTime(cur);
       trackDurationDiv.textContent = formatTime(dur);
+
+      // Update now-playing display if this is the active track
+      if (playerState.playingIndex === idx) {
+        updateNowPlayingDisplay();
+      }
     }
   });
 
@@ -1135,7 +1207,7 @@ window.addEventListener('popstate', () => {
 musicData.forEach((trackData, i) => {
   const trackObj = createTrackElement(trackData, i);
   playerState.tracks.push(trackObj);
-  domElements.playlistContainer.appendChild(trackObj.container);
+  domElements.tracklistDiv.appendChild(trackObj.container);
 });
 
 // Anchor click binding for centered scroll behavior

@@ -12,21 +12,22 @@
   <div id="header">
     <div id="header-inner" class="content"></div>
   </div>
-  <div id="playlist-container" aria-label="Tracklist"></div>
-  <div id="footer-controls" aria-label="Global audio controls">
-    <div class="footer-inner-container">
-      <div id="global-playback-buttons">
+  <div id="tracklist" aria-label="Tracklist"></div>
+  <div id="footer">
+    <div id="footer-inner-container" class="content">
+      <div id="global-playback-buttons" aria-label="Global playback controls">
         <button id="btn-prev" class="playback-button" aria-label="Previous track" title="Previous track"></button>
         <button id="btn-play-pause" class="playback-button" aria-label="Play/Pause global audio player" title="Play/Pause global audio player"></button>
         <button id="btn-next" class="playback-button" aria-label="Next track" title="Next track"></button>
       </div>
-      <div id="volume-controls">
+      <div id="volume-controls" aria-label="Volume controls">
         <button id="btn-mute" aria-label="Mute/Unmute volume" title="Mute/Unmute volume"></button>
         <div id="volume-slider" aria-label="Volume control" tabindex="0">
           <div id="volume-fill"></div>
         </div>
         <span id="volume-percent" class="volume-percent">100%</span>
       </div>
+      <div id="now-playing"></div>
     </div>
   </div>
   <script src="music.js"></script>
