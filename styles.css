@@ -390,6 +390,9 @@ canvas.track-waveform-canvas {
 .track-details-btn[aria-expanded="true"]::after {
   transform: rotate(-180deg);
 }
+.track-details-btn:hover {
+  color: var(--text-color-muted);
+}
 .track-details-content {
   font-family: WoffRobotoCondensed;
   font-size: 0.9rem;
