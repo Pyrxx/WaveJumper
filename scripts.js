@@ -785,14 +785,24 @@ function createTrackElement(data, idx) {
   audioElement.addEventListener('seeked', () => {
     console.log(`Track ${idx} seeked`);
     // After seeking, check if we have enough buffered data
-    if (audioElement.buffered.length > 0) {
-      const bufferedEnd = audioElement.buffered.end(audioElement.buffered.length - 1);
-      if (bufferedEnd > audioElement.currentTime) {
-        updateBufferingUI(-1);
-      } else {
-        // Still buffering after seek
-        updateBufferingUI(idx);
+    let hasEnoughBuffer = false;
+  
+    // Check all buffered ranges
+    for (let i = 0; i < audioElement.buffered.length; i++) {
+      const start = audioElement.buffered.start(i);
+      const end = audioElement.buffered.end(i);
+  
+      if (start <= audioElement.currentTime && audioElement.currentTime < end) {
+        hasEnoughBuffer = true;
+        break;
       }
+    }
+  
+    if (hasEnoughBuffer) {
+      updateBufferingUI(-1);
+    } else {
+      // Still buffering after seek
+      updateBufferingUI(idx);
     }
   });
 
@@ -1020,13 +1030,23 @@ function createTrackElement(data, idx) {
     }
 
     // After seeking, check buffering state
-    if (audioElement.buffered.length > 0) {
-      const bufferedEnd = audioElement.buffered.end(audioElement.buffered.length - 1);
-      if (bufferedEnd <= audioElement.currentTime) {
-        updateBufferingUI(idx);
-      } else {
-        updateBufferingUI(-1);
+    let hasEnoughBuffer = false;
+    
+    // Check all buffered ranges
+    for (let i = 0; i < audioElement.buffered.length; i++) {
+      const start = audioElement.buffered.start(i);
+      const end = audioElement.buffered.end(i);
+    
+      if (start <= audioElement.currentTime && audioElement.currentTime < end) {
+        hasEnoughBuffer = true;
+        break;
       }
+    }
+    
+    if (hasEnoughBuffer) {
+      updateBufferingUI(-1);
+    } else {
+      updateBufferingUI(idx);
     }
   }
 
