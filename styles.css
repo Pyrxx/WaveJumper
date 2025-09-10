@@ -498,7 +498,6 @@ canvas.track-waveform-canvas {
   background-color: var(--background);
   height: 20px;
   border-radius: 5px;
-  overflow: hidden;
   --vol-percent: 100%;
   -webkit-tap-highlight-color: transparent;
   touch-action: pan-y;
@@ -508,7 +507,7 @@ canvas.track-waveform-canvas {
 #volume-fill {
   height: 100%;
   background: var(--highlight);
-  border-radius: 5px 0 0 5px;
+  border-radius: 5px;
   width: var(--vol-percent);
   pointer-events: none;
 }
