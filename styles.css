@@ -386,12 +386,13 @@ canvas.track-waveform-canvas {
   text-transform: uppercase;
   user-select: none;
   border-radius: 6px 6px 0px 0px;
-  padding: 3px 5px 5px 5px;
+  padding: 3px 17px 5px 5px;
   box-shadow: inset 0px 5px 3px 0px rgba(0, 0, 0, 0.2);
   transition: transform var(--transition-default);
   -webkit-tap-highlight-color: transparent;
 }
 .track-details-btn::after {
+  position: absolute;
   content: '▼';
   font-size: 0.7rem;
   margin-left: 3px;
