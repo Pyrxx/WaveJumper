@@ -1,9 +1,14 @@
 /* ============================================================================
-  Global constants, configuration, and reusable helpers
+  WaveJumper - Audio Player with Waveform Visualization
+  ============================================================================ */
+
+/* ============================================================================
+  1. GLOBAL CONSTANTS, CONFIGURATION, AND REUSABLE HELPERS
 ============================================================================ */
 
 /**
  * SVG icon markup placeholders (inline SVG or strings)
+ * @type {Object<string, string>}
  */
 const ICONS = {
   buffering: `<svg class="buffering-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10.72,19.9a8,8,0,0,1-6.5-9.79A7.77,7.77,0,0,1,10.4,4.16a8,8,0,0,1,9.49,6.52A1.54,1.54,0,0,0,21.38,12h.13a1.37,1.37,0,0,0,1.38-1.54,11,11,0,1,0-12.7,12.39A1.54,1.54,0,0,0,12,21.34h0A1.47,1.47,0,0,0,10.72,19.9Z"><animateTransform attributeName="transform" type="rotate" dur="0.75s" values="0 12 12;360 12 12" repeatCount="indefinite"/></path></svg>`,
@@ -17,6 +22,7 @@ const ICONS = {
 
 /**
  * Waveform visualization constants
+ * @type {Object}
  */
 const WAVEFORM_CONFIG = {
   barWidth: 2,           // Width of each waveform bar in pixels
@@ -29,6 +35,7 @@ const WAVEFORM_CONFIG = {
 
 /**
  * Playback and interaction constants
+ * @type {Object}
  */
 const PLAYBACK_CONFIG = {
   skipSmall: 10,         // Arrow keys seek step in seconds
@@ -44,7 +51,7 @@ const PLAYBACK_CONFIG = {
  * @returns {string} Formatted time string
  */
 const formatTime = (seconds, showHours = false) => {
-  if (!Number.isFinite(seconds) || seconds <= 0) return '0:00';
+  if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
 
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
@@ -68,19 +75,21 @@ const clamp01 = v => Math.min(Math.max(v, 0), 1);
  * @param {string} input - String to slugify
  * @returns {string} Slugified string
  */
-function slugify(input) {
-  return String(input)
+const slugify = (input) => {
+  if (typeof input !== 'string') return '';
+
+  return input
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')   // Replace non-alphanumerics with dashes
     .replace(/^-+|-+$/g, '')       // Trim leading/trailing dashes
     .replace(/-{2,}/g, '-');       // Collapse multiple dashes
-}
+};
 
 /**
  * Gets CSS theme variables for waveform rendering
  * @returns {Object} Theme variables
  */
-function getThemeVars() {
+const getThemeVars = () => {
   const root = document.documentElement;
   const style = getComputedStyle(root);
   return {
@@ -88,16 +97,12 @@ function getThemeVars() {
     highlightAlt: style.getPropertyValue('--highlight-alt').trim(),
     textColorMuted: style.getPropertyValue('--text-color-muted').trim()
   };
-}
+};
 
 /* ============================================================================
-  Waveform rendering and data interpolation
+  2. WAVEFORM RENDERING AND DATA INTERPOLATION
 ============================================================================ */
 
-/**
- * Renders a bar waveform to a canvas 2D context.
- * Colors are resolved once per call and reused for all bars.
- */
 /**
  * Renders a bar waveform to a canvas 2D context
  * @param {CanvasRenderingContext2D} ctx - Canvas context
@@ -109,32 +114,37 @@ function getThemeVars() {
  * @param {boolean} [isHovering=false] - Whether hovering is active
  * @param {Object} [theme=null] - Theme colors
  */
-function drawWaveform(ctx, ampData, progress, width, height, hoverIndex = -1, isHovering = false, theme = null) {
-  if (!ctx) return;
-  ctx.clearRect(0, 0, width, height);
+const drawWaveform = (ctx, ampData, progress, width, height, hoverIndex = -1, isHovering = false, theme = null) => {
+  if (!ctx || !ampData || ampData.length === 0) return;
 
-  const colors = theme || getThemeVars();
-  const midY = height / 2;
-  const total = ampData.length;
+  try {
+    ctx.clearRect(0, 0, width, height);
 
-  for (let i = 0; i < total; i++) {
-    const amp = ampData[i];
-    const barHeight = amp * height;
-    const x = i * WAVEFORM_CONFIG.peakUnit;
+    const colors = theme || getThemeVars();
+    const midY = height / 2;
+    const total = ampData.length;
 
-    let fillStyle;
-    if (isHovering && i === hoverIndex) {
-      fillStyle = colors.highlightAlt;
-    } else if (progress > 0 && i / total <= progress) {
-      fillStyle = colors.highlight;
-    } else {
-      fillStyle = colors.textColorMuted;
+    for (let i = 0; i < total; i++) {
+      const amp = ampData[i] || 0;
+      const barHeight = amp * height;
+      const x = i * WAVEFORM_CONFIG.peakUnit;
+
+      let fillStyle;
+      if (isHovering && i === hoverIndex) {
+        fillStyle = colors.highlightAlt;
+      } else if (progress > 0 && i / total <= progress) {
+        fillStyle = colors.highlight;
+      } else {
+        fillStyle = colors.textColorMuted;
+      }
+
+      ctx.fillStyle = fillStyle;
+      ctx.fillRect(x, midY - barHeight / 2, WAVEFORM_CONFIG.barWidth, barHeight);
     }
-
-    ctx.fillStyle = fillStyle;
-    ctx.fillRect(x, midY - barHeight / 2, WAVEFORM_CONFIG.barWidth, barHeight);
+  } catch (err) {
+    console.error('Error drawing waveform:', err);
   }
-}
+};
 
 /**
  * Interpolates amplitude data to a target length using linear interpolation
@@ -142,40 +152,48 @@ function drawWaveform(ctx, ampData, progress, width, height, hoverIndex = -1, is
  * @param {number} targetLength - Desired length
  * @returns {number[]} Interpolated data
  */
-function interpolateAmplitudeData(inputData, targetLength) {
+const interpolateAmplitudeData = (inputData, targetLength) => {
+  if (!Array.isArray(inputData) || !Number.isInteger(targetLength) || targetLength <= 0) {
+    return [];
+  }
+
   const output = new Array(targetLength);
   const inputLength = inputData.length;
-  if (!inputLength || !targetLength) return [];
+
+  if (inputLength === 0) return output;
 
   for (let i = 0; i < targetLength; i++) {
     const pos = i * (inputLength - 1) / (targetLength - 1);
     const idx = Math.floor(pos);
     const frac = pos - idx;
-    const v1 = inputData[idx] || 0;
-    const v2 = inputData[Math.min(idx + 1, inputLength - 1)] || 0;
+    const v1 = inputData[idx] ?? 0;
+    const v2 = inputData[Math.min(idx + 1, inputLength - 1)] ?? 0;
     output[i] = v1 + frac * (v2 - v1);
   }
+
   return output;
-}
+};
 
 /* ============================================================================
-  Player state, DOM references, and cross-component utilities
+  3. PLAYER STATE, DOM REFERENCES, AND CROSS-COMPONENT UTILITIES
 ============================================================================ */
 
 /**
  * Player state
+ * @type {Object}
  */
 const playerState = {
   tracks: [],           // Array of track objects with references and helpers
   playingIndex: -1,     // Index of currently playing track, -1 if none
   isMuted: false,       // Global mute toggle
   prevVolume: 1,        // Last non-zero volume (for unmute restore)
-  currentVolume: 1,      // Current volume level
-  bufferingIndex: -1    // Index of track currently buffering, -1 if none
+  currentVolume: 1,     // Current volume level
+  bufferingIndex: -1   // Index of track currently buffering, -1 if none
 };
 
 /**
  * DOM element references
+ * @type {Object}
  */
 const domElements = {
   playBtn: document.querySelector('#btn-play-pause'),
@@ -193,29 +211,36 @@ const domElements = {
  * Updates the volume bar UI
  * @param {number} volume - Volume level (0-1)
  */
-function updateVolumeBar(volume) {
-  const perc = Math.round(volume * 100);
+const updateVolumeBar = (volume) => {
+  if (!domElements.volumeSlider) return;
+
+  const perc = Math.round(clamp01(volume) * 100);
   domElements.volumeSlider.style.setProperty('--vol-percent', `${perc}%`);
+
   if (domElements.volumeFill) {
     domElements.volumeFill.style.width = `${perc}%`;
   }
-}
+};
 
 /**
  * Updates the volume percentage display
  * @param {number} volume - Volume level (0-1)
  */
-function updateVolumePercent(volume) {
-  const percent = Math.round(volume * 100);
+const updateVolumePercent = (volume) => {
+  if (!domElements.volumePercent) return;
+
+  const percent = Math.round(clamp01(volume) * 100);
   domElements.volumePercent.textContent = `${percent}%`;
-}
+};
 
 /**
  * Updates the mute button icon
  */
-function updateMuteButton() {
+const updateMuteButton = () => {
+  if (!domElements.muteBtn) return;
+
   domElements.muteBtn.innerHTML = playerState.isMuted ? ICONS.unmute : ICONS.mute;
-}
+};
 
 /**
  * Synchronizes footer controls with an active track
@@ -223,7 +248,7 @@ function updateMuteButton() {
  * @param {HTMLElement} playBtn - Play button element
  * @param {number} idx - Track index
  */
-function updateFooter(audio, playBtn, idx) {
+const updateFooter = (audio, playBtn, idx) => {
   if ((audio || playBtn) && Number.isInteger(idx) && playerState.tracks[idx]) {
     if (!audio) audio = playerState.tracks[idx].audio;
     if (!playBtn) playBtn = playerState.tracks[idx].btnPlay;
@@ -254,13 +279,13 @@ function updateFooter(audio, playBtn, idx) {
     updateVolumeBar(1);
     updateVolumePercent(1);
   }
-}
+};
 
 /**
  * Updates UI for buffering state
  * @param {number} idx - Track index that's buffering, or -1 if none
  */
-function updateBufferingUI(idx) {
+const updateBufferingUI = (idx) => {
   playerState.bufferingIndex = idx;
 
   if (idx === -1) {
@@ -286,13 +311,15 @@ function updateBufferingUI(idx) {
       }
     }
   }
-}
+};
 
 /**
  * Scrolls an element to the vertical center of the viewport
  * @param {HTMLElement} element - Element to scroll to
  */
-function scrollToCenterElement(element) {
+const scrollToCenterElement = (element) => {
+  if (!element) return;
+
   const bounding = element.getBoundingClientRect();
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
   const scrollToY = window.scrollY + bounding.top - (viewportHeight / 2) + (bounding.height / 2);
@@ -301,12 +328,12 @@ function scrollToCenterElement(element) {
     top: scrollToY,
     behavior: 'smooth'
   });
-}
+};
 
 /**
  * Updates the now-playing display with active track information
  */
-function updateNowPlayingDisplay() {
+const updateNowPlayingDisplay = () => {
   const nowPlaying = domElements.nowPlaying;
   if (!nowPlaying) return;
 
@@ -368,28 +395,31 @@ function updateNowPlayingDisplay() {
   nowPlaying.appendChild(coverDiv);
   nowPlaying.appendChild(infoDiv);
   nowPlaying.appendChild(timeDiv);
-}
+};
 
 /**
  * Plays audio with error handling
  * @param {HTMLAudioElement} audio - Audio element to play
  * @returns {Promise<boolean>} True if playback started successfully
  */
-async function safePlay(audio) {
+const safePlay = async (audio) => {
+  if (!audio) return false;
+
   try {
     await audio.play();
     return true;
   } catch (err) {
+    console.error('Playback error:', err);
     return false;
   }
-}
+};
 
 /**
  * Updates Media Session metadata and playback state
  * @param {number} idx - Track index
  * @param {string} [playbackState='none'] - Playback state: 'none', 'paused', or 'playing'
  */
-function updateMediaSession(idx, playbackState = 'none') {
+const updateMediaSession = (idx, playbackState = 'none') => {
   if (!('mediaSession' in navigator)) return;
 
   const track = playerState.tracks[idx];
@@ -411,20 +441,17 @@ function updateMediaSession(idx, playbackState = 'none') {
   if (playbackState === 'none') playbackState = 'paused';
 
   navigator.mediaSession.playbackState = playbackState;
-
-  const mediaSession = navigator.mediaSession;
-
-}
+};
 
 /* ============================================================================
-  Core playback and navigation
+  4. CORE PLAYBACK AND NAVIGATION
 ============================================================================ */
 
 /**
  * Gets the current track index based on various factors
  * @returns {number} Current track index
  */
-function getCurrentTrackIndex() {
+const getCurrentTrackIndex = () => {
   // Check if we have a linked index from the footer button
   if (Number.isInteger(domElements.playBtn._linkedIndex)) {
     return domElements.playBtn._linkedIndex;
@@ -444,7 +471,7 @@ function getCurrentTrackIndex() {
 
   // Default to first track
   return 0;
-}
+};
 
 /**
  * Gets the next track index based on direction
@@ -452,7 +479,7 @@ function getCurrentTrackIndex() {
  * @param {number} direction - -1 for previous, +1 for next
  * @returns {number|null} Next track index or null if invalid
  */
-function getNextTrackIndex(currentIndex, direction) {
+const getNextTrackIndex = (currentIndex, direction) => {
   let nextIndex = currentIndex;
 
   if (direction === -1) { // Previous
@@ -462,69 +489,75 @@ function getNextTrackIndex(currentIndex, direction) {
   }
 
   return nextIndex !== null && playerState.tracks[nextIndex] ? nextIndex : null;
-}
+};
 
 /* ============================================================================
-  Media Session Action Handlers
+  5. MEDIA SESSION ACTION HANDLERS
 ============================================================================ */
 
 // Play action handler
-function handleMediaPlay() {
-  togglePlay();
-}
+const handleMediaPlay = () => {
+  void togglePlay();
+};
 
 // Pause action handler
-function handleMediaPause() {
-  togglePlay();
-}
+const handleMediaPause = () => {
+  void togglePlay();
+};
 
 // Previous track action
-function handleMediaPrevious() {
-  togglePlay(-1);
-}
+const handleMediaPrevious = () => {
+  void togglePlay(-1);
+};
 
 // Next track action
-function handleMediaNext() {
-  togglePlay(+1);
-}
+const handleMediaNext = () => {
+  void togglePlay(+1);
+};
 
 // Seek action
-function handleMediaSeek(details) {
+const handleMediaSeek = (details) => {
   const audio = playerState.tracks[playerState.playingIndex]?.audio;
   if (!audio) return;
+
   if (details.fastSeek && typeof audio.fastSeek === 'function') {
     audio.fastSeek(details.seekTime);
   } else {
     audio.currentTime = details.seekTime;
   }
-}
+};
 
 // Stop action
-function handleMediaStop() {
+const handleMediaStop = () => {
   const audio = playerState.tracks[playerState.playingIndex]?.audio;
   if (!audio) return;
+
   audio.pause();
   audio.currentTime = 0;
   updateMediaSession(playerState.playingIndex, 'paused');
-}
+};
 
 // Seek forward action
-function handleMediaSeekForward() {
+const handleMediaSeekForward = () => {
   const audio = playerState.tracks[playerState.playingIndex]?.audio;
   if (!audio) return;
+
   const newTime = audio.currentTime + PLAYBACK_CONFIG.skipSmall;
   if (newTime > audio.duration) return;
+
   audio.currentTime = newTime;
-}
+};
 
 // Seek backward action
-function handleMediaSeekBackward() {
+const handleMediaSeekBackward = () => {
   const audio = playerState.tracks[playerState.playingIndex]?.audio;
   if (!audio) return;
+
   const newTime = audio.currentTime - PLAYBACK_CONFIG.skipSmall;
   if (newTime < 0) return;
+
   audio.currentTime = 0;
-}
+};
 
 // Set up media session handlers once
 if ('mediaSession' in navigator) {
@@ -542,7 +575,7 @@ if ('mediaSession' in navigator) {
  * Pauses all tracks except the specified one
  * @param {HTMLAudioElement} excludeAudio - Audio element to exclude from pausing
  */
-function pauseAllOtherTracks(excludeAudio) {
+const pauseAllOtherTracks = (excludeAudio) => {
   playerState.tracks.forEach(({ audio, btnPlay }) => {
     if (audio && audio !== excludeAudio) {
       audio.pause();
@@ -552,26 +585,26 @@ function pauseAllOtherTracks(excludeAudio) {
       }
     }
   });
-}
+};
 
 /**
  * Updates UI for play state
  * @param {HTMLAudioElement} audio - Audio element
  * @param {HTMLElement} playBtn - Play button element
  */
-function updatePlayStateUI(audio, playBtn) {
+const updatePlayStateUI = (audio, playBtn) => {
   if (playBtn) {
     playBtn.innerHTML = ICONS.pause;
     playBtn.setAttribute('aria-pressed', 'true');
   }
   domElements.playBtn.innerHTML = ICONS.pause;
-}
+};
 
 /**
  * Updates the active track class
  * @param {number} activeIndex - Index of the active track
  */
-function updateActiveTrackClass(activeIndex) {
+const updateActiveTrackClass = (activeIndex) => {
   // Remove active-track class from all tracks
   playerState.tracks.forEach((track, index) => {
     if (track.container) {
@@ -586,26 +619,26 @@ function updateActiveTrackClass(activeIndex) {
       activeTrack.container.classList.add('active-track');
     }
   }
-}
+};
 
 /**
  * Updates UI for pause state
  * @param {HTMLAudioElement} audio - Audio element
  * @param {HTMLElement} playBtn - Play button element
  */
-function updatePauseStateUI(audio, playBtn) {
+const updatePauseStateUI = (audio, playBtn) => {
   if (playBtn) {
     playBtn.innerHTML = ICONS.play;
     playBtn.setAttribute('aria-pressed', 'false');
   }
   domElements.playBtn.innerHTML = ICONS.play;
-}
+};
 
 /**
  * Centralized play/pause/resume toggle
  * @param {number} [directionOrIndex] -1 for previous track, +1 for next track, or specific track index
  */
-async function togglePlay(directionOrIndex) {
+const togglePlay = async (directionOrIndex) => {
   let targetIndex;
 
   // Determine if directionOrIndex is a direction (-1, +1) or a track index
@@ -664,10 +697,10 @@ async function togglePlay(directionOrIndex) {
     updateActiveTrackClass(targetIndex);
     updateNowPlayingDisplay();
   }
-}
+};
 
 /* ============================================================================
-  Track element creation and per-track interaction wiring
+  6. TRACK ELEMENT CREATION AND PER-TRACK INTERACTION WIRING
 ============================================================================ */
 
 /**
@@ -676,7 +709,7 @@ async function togglePlay(directionOrIndex) {
  * @param {number} idx - Track index
  * @returns {Object} Track object with references
  */
-function createTrackElement(data, idx) {
+const createTrackElement = (data, idx) => {
   // Data shape: [filename, artist, title, date, genre, durationSec, detailsHTML, coverBase64, ampJSON, hash]
   const [filename, artist, title, dateStr, genre, durationSec, detailsHTML, coverBase64, ampJSON] = data;
   const ampData = JSON.parse(ampJSON);
@@ -818,18 +851,18 @@ function createTrackElement(data, idx) {
   audioElement.addEventListener('seeked', () => {
     // After seeking, check if we have enough buffered data
     let hasEnoughBuffer = false;
-  
+
     // Check all buffered ranges
     for (let i = 0; i < audioElement.buffered.length; i++) {
       const start = audioElement.buffered.start(i);
       const end = audioElement.buffered.end(i);
-  
+
       if (start <= audioElement.currentTime && audioElement.currentTime < end) {
         hasEnoughBuffer = true;
         break;
       }
     }
-  
+
     if (hasEnoughBuffer) {
       updateBufferingUI(-1);
     } else {
@@ -901,7 +934,7 @@ function createTrackElement(data, idx) {
 
   /* Track-level play/pause control */
   trackPlayPauseBtn.addEventListener('click', () => {
-    togglePlay(idx);
+    void togglePlay(idx);
   });
 
   /* Unified pointer interactions for waveform hovering and seeking */
@@ -913,58 +946,58 @@ function createTrackElement(data, idx) {
     trackWaveformCanvas.style.touchAction = 'none';
   }
 
-  function getDuration() {
+  const getDuration = () => {
     return audioElement.duration || durationSec || 0;
-  }
+  };
 
-  function getProgressRatio() {
+  const getProgressRatio = () => {
     const dur = getDuration();
     return dur ? (audioElement.currentTime / dur) : 0;
-  }
+  };
 
-  function setCurrentTimeFromRatio(ratio) {
+  const setCurrentTimeFromRatio = (ratio) => {
     const dur = getDuration();
     audioElement.currentTime = clamp01(ratio) * dur;
-  }
+  };
 
-  function setHoverUI(showHover) {
+  const setHoverUI = (showHover) => {
     if (showHover) {
       trackTimeDiv.classList.add('wave-hover');
     } else {
       trackTimeDiv.classList.remove('wave-hover');
     }
-  }
+  };
 
-  function renderWave({ progressRatio, hoverIdx = -1, showHover = false }) {
+  const renderWave = ({ progressRatio, hoverIdx = -1, showHover = false }) => {
     drawWaveform(ctx, waveformData, progressRatio, currentCanvasWidth, WAVEFORM_CONFIG.height, hoverIdx, showHover, themeCache);
-  }
+  };
 
-  function updateTimeDisplay(showHover, ratioForHover = null) {
+  const updateTimeDisplay = (showHover, ratioForHover = null) => {
     const dur = getDuration();
     const cur = audioElement.currentTime;
     const timeToShow = showHover && ratioForHover != null ? (ratioForHover * dur) : cur;
     trackPlayPosDiv.textContent = formatTime(timeToShow);
     trackDurationDiv.textContent = formatTime(dur);
     setHoverUI(showHover);
-  }
+  };
 
-  function getRatioFromClientX(clientX) {
+  const getRatioFromClientX = (clientX) => {
     const rect = trackWaveformCanvas.getBoundingClientRect();
     if (!rect.width) return 0;
     return clamp01((clientX - rect.left) / rect.width);
-  }
+  };
 
-  function getRatioFromEvent(ev) {
+  const getRatioFromEvent = (ev) => {
     return getRatioFromClientX(ev.clientX);
-  }
+  };
 
-  function getHoverIndexFromRatio(ratio) {
+  const getHoverIndexFromRatio = (ratio) => {
     if (!waveformData || !waveformData.length) return -1;
     const i = Math.floor(clamp01(ratio) * waveformData.length);
     return Math.min(Math.max(i, 0), waveformData.length - 1);
-  }
+  };
 
-  function updateHoverFromEvent(ev, seeking = false) {
+  const updateHoverFromEvent = (ev, seeking = false) => {
     const ratio = getRatioFromEvent(ev);
     const dur = getDuration();
 
@@ -978,9 +1011,9 @@ function createTrackElement(data, idx) {
     updateTimeDisplay(true, ratio);
 
     return { ratio, dur };
-  }
+  };
 
-  function clearHover() {
+  const clearHover = () => {
     isHovering = false;
     hoverIndex = -1;
     const dur = getDuration();
@@ -989,7 +1022,7 @@ function createTrackElement(data, idx) {
 
     renderWave({ progressRatio, hoverIdx: -1, showHover: false });
     updateTimeDisplay(false, null);
-  }
+  };
 
   audioElement.addEventListener('timeupdate', () => {
     if (!isHovering) {
@@ -1007,7 +1040,7 @@ function createTrackElement(data, idx) {
     }
   });
 
-  function onPointerDown(ev) {
+  const onPointerDown = (ev) => {
     ev.preventDefault();
     isPointerDown = true;
     isHovering = true;
@@ -1015,9 +1048,9 @@ function createTrackElement(data, idx) {
       trackWaveformCanvas.setPointerCapture(ev.pointerId);
     } catch {}
     updateHoverFromEvent(ev, true);
-  }
+  };
 
-  function onPointerMove(ev) {
+  const onPointerMove = (ev) => {
     const supportsHover = ev.pointerType === 'mouse';
     if (isPointerDown) {
       ev.preventDefault();
@@ -1025,9 +1058,9 @@ function createTrackElement(data, idx) {
     } else if (supportsHover) {
       updateHoverFromEvent(ev, false);
     }
-  }
+  };
 
-  function onPointerUp(ev) {
+  const onPointerUp = (ev) => {
     isPointerDown = false;
     const supportsHover = ev.pointerType === 'mouse';
     try {
@@ -1041,33 +1074,33 @@ function createTrackElement(data, idx) {
 
     // After seeking, check buffering state
     let hasEnoughBuffer = false;
-    
+
     // Check all buffered ranges
     for (let i = 0; i < audioElement.buffered.length; i++) {
       const start = audioElement.buffered.start(i);
       const end = audioElement.buffered.end(i);
-    
+
       if (start <= audioElement.currentTime && audioElement.currentTime < end) {
         hasEnoughBuffer = true;
         break;
       }
     }
-    
+
     if (hasEnoughBuffer) {
       updateBufferingUI(-1);
     } else {
       updateBufferingUI(idx);
     }
-  }
+  };
 
-  function onPointerLeave() {
+  const onPointerLeave = () => {
     if (!isPointerDown) clearHover();
-  }
+  };
 
-  function onPointerCancel() {
+  const onPointerCancel = () => {
     isPointerDown = false;
     clearHover();
-  }
+  };
 
   trackWaveformCanvas.addEventListener('pointerdown', onPointerDown, { passive: false });
   trackWaveformCanvas.addEventListener('pointermove', onPointerMove, { passive: false });
@@ -1081,7 +1114,7 @@ function createTrackElement(data, idx) {
    * @param {number} unit - Grid unit size
    * @returns {number} Adjusted width
    */
-  function adjustWidthToGrid(width, unit) {
+  const adjustWidthToGrid = (width, unit) => {
     for (let reduction = 0; reduction <= (unit - 1); reduction++) {
       const testWidth = width - reduction;
       if (testWidth % unit === 0) {
@@ -1089,16 +1122,16 @@ function createTrackElement(data, idx) {
       }
     }
     return width;
-  }
+  };
 
   /**
    * Calculates number of peaks for waveform
    * @param {number} containerWidth - Container width
    * @returns {number} Number of peaks
    */
-  function calculateNumPeaks(containerWidth) {
+  const calculateNumPeaks = (containerWidth) => {
     return containerWidth > 0 ? Math.floor(containerWidth / WAVEFORM_CONFIG.peakUnit) : 0;
-  }
+  };
 
   // Debounced resize handling
   let resizeTimer = null;
@@ -1123,10 +1156,10 @@ function createTrackElement(data, idx) {
     canvasCtx: ctx,
     updateCanvasWidthAndDraw
   };
-}
+};
 
 /* ============================================================================
-  Global footer controls, keyboard, media keys, and navigation
+  7. GLOBAL FOOTER CONTROLS, KEYBOARD, MEDIA KEYS, AND NAVIGATION
 ============================================================================ */
 
 /* Volume slider: propagate to all tracks, update UI and mute state */
@@ -1315,7 +1348,7 @@ window.addEventListener('popstate', () => {
 });
 
 /* ============================================================================
-  Initialization and lifecycle
+  8. INITIALIZATION AND LIFECYCLE
 ============================================================================ */
 
 // Build all track elements from musicData and attach to the DOM
