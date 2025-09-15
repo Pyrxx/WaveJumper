@@ -380,7 +380,6 @@ async function safePlay(audio) {
     await audio.play();
     return true;
   } catch (err) {
-    console.warn('Playback requires a user interaction to start.');
     return false;
   }
 }
@@ -401,72 +400,67 @@ function updateMediaSession(idx, playbackState = 'none') {
   const imgEl = track.container.querySelector('.track-cover-img');
   const artworkSrc = imgEl?.src || '';
 
-  try {
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title,
-      artist,
-      album: '',
-      artwork: artworkSrc ? [{ src: artworkSrc, sizes: '512x512', type: 'image/png' }] : []
-    });
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title,
+    artist,
+    album: '',
+    artwork: artworkSrc ? [{ src: artworkSrc, sizes: '512x512', type: 'image/png' }] : []
+  });
 
-    // Normalize playbackState to 'playing' or 'paused' for loaded media
-    if (playbackState === 'none') playbackState = 'paused';
+  // Normalize playbackState to 'playing' or 'paused' for loaded media
+  if (playbackState === 'none') playbackState = 'paused';
 
-    navigator.mediaSession.playbackState = playbackState;
+  navigator.mediaSession.playbackState = playbackState;
 
-    const mediaSession = navigator.mediaSession;
+  const mediaSession = navigator.mediaSession;
 
-    // Play action handler
-    mediaSession.setActionHandler('play', async () => {
-      const audio = playerState.tracks[playerState.playingIndex]?.audio;
-      if (audio && audio.paused) {
-        try { await audio.play(); } catch { }
-        updateMediaSession(playerState.playingIndex, 'playing');
-      }
-    });
+  // Play action handler
+  mediaSession.setActionHandler('play', async () => {
+    const audio = playerState.tracks[playerState.playingIndex]?.audio;
+    if (audio && audio.paused) {
+      try { await audio.play(); } catch { }
+      updateMediaSession(playerState.playingIndex, 'playing');
+    }
+  });
 
-    // Pause action handler
-    mediaSession.setActionHandler('pause', () => {
-      const audio = playerState.tracks[playerState.playingIndex]?.audio;
-      if (audio && !audio.paused) {
-        audio.pause();
-        updateMediaSession(playerState.playingIndex, 'paused');
-      }
-    });
-
-    // Previous track action
-    mediaSession.setActionHandler('previoustrack', () => {
-      if (playerState.playingIndex > 0) togglePlay(-1);
-    });
-
-    // Next track action
-    mediaSession.setActionHandler('nexttrack', () => {
-      if (playerState.playingIndex < playerState.tracks.length - 1) togglePlay(+1);
-    });
-
-    // Seek action
-    mediaSession.setActionHandler('seekto', (details) => {
-      const audio = playerState.tracks[playerState.playingIndex]?.audio;
-      if (!audio) return;
-      if (details.fastSeek && typeof audio.fastSeek === 'function') {
-        audio.fastSeek(details.seekTime);
-      } else {
-        audio.currentTime = details.seekTime;
-      }
-    });
-
-    // Stop action
-    mediaSession.setActionHandler('stop', () => {
-      const audio = playerState.tracks[playerState.playingIndex]?.audio;
-      if (!audio) return;
+  // Pause action handler
+  mediaSession.setActionHandler('pause', () => {
+    const audio = playerState.tracks[playerState.playingIndex]?.audio;
+    if (audio && !audio.paused) {
       audio.pause();
-      audio.currentTime = 0;
       updateMediaSession(playerState.playingIndex, 'paused');
-    });
+    }
+  });
 
-  } catch (err) {
-    console.warn('Failed to update Media Session:', err);
-  }
+  // Previous track action
+  mediaSession.setActionHandler('previoustrack', () => {
+    if (playerState.playingIndex > 0) togglePlay(-1);
+  });
+
+  // Next track action
+  mediaSession.setActionHandler('nexttrack', () => {
+    if (playerState.playingIndex < playerState.tracks.length - 1) togglePlay(+1);
+  });
+
+  // Seek action
+  mediaSession.setActionHandler('seekto', (details) => {
+    const audio = playerState.tracks[playerState.playingIndex]?.audio;
+    if (!audio) return;
+    if (details.fastSeek && typeof audio.fastSeek === 'function') {
+      audio.fastSeek(details.seekTime);
+    } else {
+      audio.currentTime = details.seekTime;
+    }
+  });
+
+  // Stop action
+  mediaSession.setActionHandler('stop', () => {
+    const audio = playerState.tracks[playerState.playingIndex]?.audio;
+    if (!audio) return;
+    audio.pause();
+    audio.currentTime = 0;
+    updateMediaSession(playerState.playingIndex, 'paused');
+  });
 }
 
 /* ============================================================================
@@ -773,17 +767,14 @@ function createTrackElement(data, idx) {
 
   // Add buffering event listeners
   audioElement.addEventListener('waiting', () => {
-    console.log(`Track ${idx} waiting (buffering)`);
     updateBufferingUI(idx);
   });
 
   audioElement.addEventListener('playing', () => {
-    console.log(`Track ${idx} playing`);
     updateBufferingUI(-1);
   });
 
   audioElement.addEventListener('seeked', () => {
-    console.log(`Track ${idx} seeked`);
     // After seeking, check if we have enough buffered data
     let hasEnoughBuffer = false;
   
@@ -811,7 +802,6 @@ function createTrackElement(data, idx) {
     if (playerState.bufferingIndex === idx && audioElement.buffered.length > 0) {
       const bufferedEnd = audioElement.buffered.end(audioElement.buffered.length - 1);
       if (bufferedEnd > audioElement.currentTime + 0.5) { // Add small buffer margin
-        console.log(`Track ${idx} progress - enough data buffered`);
         updateBufferingUI(-1);
       }
     }
@@ -857,6 +847,15 @@ function createTrackElement(data, idx) {
     if (currentHash !== trackId) {
       history.pushState({}, '', `#${trackId}`);
     }
+    // Update UI when audio starts playing
+    updatePlayStateUI(audioElement, trackPlayPauseBtn);
+    updateFooter(audioElement, trackPlayPauseBtn, idx);
+  });
+
+  /* Update UI when audio is paused */
+  audioElement.addEventListener('pause', () => {
+    updatePauseStateUI(audioElement, trackPlayPauseBtn);
+    updateFooter(audioElement, trackPlayPauseBtn, idx);
   });
 
   /* Track-level play/pause control */
@@ -1337,15 +1336,29 @@ window.addEventListener('load', function () {
     }
   }
 
-  // Global icons and controls initial state
-  domElements.playBtn.innerHTML = ICONS.play;
-  updateMuteButton();
-  domElements.prevBtn.innerHTML = ICONS.prev;
-  domElements.nextBtn.innerHTML = ICONS.next;
+  // Check audio elements' play/pause state and update UI
+  playerState.tracks.forEach((track, idx) => {
+    if (track.audio) {
+      if (!track.audio.paused) {
+        // Found a playing track, update UI
+        playerState.playingIndex = idx;
+        updatePlayStateUI(track.audio, track.btnPlay);
+        updateFooter(track.audio, track.btnPlay, idx);
+        updateActiveTrackClass(idx);
+        updateNowPlayingDisplay();
+      }
+    }
+  });
 
-  // Volume initial state
-  updateVolumeBar(1);
-  updateVolumePercent(1);
+  // If no track is playing, set default UI state
+  if (playerState.playingIndex === -1) {
+    domElements.playBtn.innerHTML = ICONS.play;
+    updateMuteButton();
+    domElements.prevBtn.innerHTML = ICONS.prev;
+    domElements.nextBtn.innerHTML = ICONS.next;
+    updateVolumeBar(1);
+    updateVolumePercent(1);
+  }
 });
 
 // Pause all audio on page unload
