@@ -414,53 +414,6 @@ function updateMediaSession(idx, playbackState = 'none') {
 
   const mediaSession = navigator.mediaSession;
 
-  // Play action handler
-  mediaSession.setActionHandler('play', async () => {
-    const audio = playerState.tracks[playerState.playingIndex]?.audio;
-    if (audio && audio.paused) {
-      try { await audio.play(); } catch { }
-      updateMediaSession(playerState.playingIndex, 'playing');
-    }
-  });
-
-  // Pause action handler
-  mediaSession.setActionHandler('pause', () => {
-    const audio = playerState.tracks[playerState.playingIndex]?.audio;
-    if (audio && !audio.paused) {
-      audio.pause();
-      updateMediaSession(playerState.playingIndex, 'paused');
-    }
-  });
-
-  // Previous track action
-  mediaSession.setActionHandler('previoustrack', () => {
-    if (playerState.playingIndex > 0) togglePlay(-1);
-  });
-
-  // Next track action
-  mediaSession.setActionHandler('nexttrack', () => {
-    if (playerState.playingIndex < playerState.tracks.length - 1) togglePlay(+1);
-  });
-
-  // Seek action
-  mediaSession.setActionHandler('seekto', (details) => {
-    const audio = playerState.tracks[playerState.playingIndex]?.audio;
-    if (!audio) return;
-    if (details.fastSeek && typeof audio.fastSeek === 'function') {
-      audio.fastSeek(details.seekTime);
-    } else {
-      audio.currentTime = details.seekTime;
-    }
-  });
-
-  // Stop action
-  mediaSession.setActionHandler('stop', () => {
-    const audio = playerState.tracks[playerState.playingIndex]?.audio;
-    if (!audio) return;
-    audio.pause();
-    audio.currentTime = 0;
-    updateMediaSession(playerState.playingIndex, 'paused');
-  });
 }
 
 /* ============================================================================
@@ -509,6 +462,80 @@ function getNextTrackIndex(currentIndex, direction) {
   }
 
   return nextIndex !== null && playerState.tracks[nextIndex] ? nextIndex : null;
+}
+
+/* ============================================================================
+  Media Session Action Handlers
+============================================================================ */
+
+// Play action handler
+function handleMediaPlay() {
+  togglePlay();
+}
+
+// Pause action handler
+function handleMediaPause() {
+  togglePlay();
+}
+
+// Previous track action
+function handleMediaPrevious() {
+  togglePlay(-1);
+}
+
+// Next track action
+function handleMediaNext() {
+  togglePlay(+1);
+}
+
+// Seek action
+function handleMediaSeek(details) {
+  const audio = playerState.tracks[playerState.playingIndex]?.audio;
+  if (!audio) return;
+  if (details.fastSeek && typeof audio.fastSeek === 'function') {
+    audio.fastSeek(details.seekTime);
+  } else {
+    audio.currentTime = details.seekTime;
+  }
+}
+
+// Stop action
+function handleMediaStop() {
+  const audio = playerState.tracks[playerState.playingIndex]?.audio;
+  if (!audio) return;
+  audio.pause();
+  audio.currentTime = 0;
+  updateMediaSession(playerState.playingIndex, 'paused');
+}
+
+// Seek forward action
+function handleMediaSeekForward() {
+  const audio = playerState.tracks[playerState.playingIndex]?.audio;
+  if (!audio) return;
+  const newTime = audio.currentTime + PLAYBACK_CONFIG.skipSmall;
+  if (newTime > audio.duration) return;
+  audio.currentTime = newTime;
+}
+
+// Seek backward action
+function handleMediaSeekBackward() {
+  const audio = playerState.tracks[playerState.playingIndex]?.audio;
+  if (!audio) return;
+  const newTime = audio.currentTime - PLAYBACK_CONFIG.skipSmall;
+  if (newTime < 0) return;
+  audio.currentTime = 0;
+}
+
+// Set up media session handlers once
+if ('mediaSession' in navigator) {
+  navigator.mediaSession.setActionHandler('play', handleMediaPlay);
+  navigator.mediaSession.setActionHandler('pause', handleMediaPause);
+  navigator.mediaSession.setActionHandler('previoustrack', handleMediaPrevious);
+  navigator.mediaSession.setActionHandler('nexttrack', handleMediaNext);
+  navigator.mediaSession.setActionHandler('seekto', handleMediaSeek);
+  navigator.mediaSession.setActionHandler('stop', handleMediaStop);
+  navigator.mediaSession.setActionHandler('seekforward', handleMediaSeekForward);
+  navigator.mediaSession.setActionHandler('seekbackward', handleMediaSeekBackward);
 }
 
 /**
@@ -576,13 +603,25 @@ function updatePauseStateUI(audio, playBtn) {
 
 /**
  * Centralized play/pause/resume toggle
- * @param {number} [direction] -1 for previous track, +1 for next track
+ * @param {number} [directionOrIndex] -1 for previous track, +1 for next track, or specific track index
  */
-async function togglePlay(direction) {
-  const currentIndex = getCurrentTrackIndex();
-  const targetIndex = direction !== undefined ? getNextTrackIndex(currentIndex, direction) : currentIndex;
+async function togglePlay(directionOrIndex) {
+  let targetIndex;
 
-  if (targetIndex === null) return;
+  // Determine if directionOrIndex is a direction (-1, +1) or a track index
+  if (directionOrIndex === -1 || directionOrIndex === +1) {
+    // It's a direction
+    const currentIndex = getCurrentTrackIndex();
+    targetIndex = getNextTrackIndex(currentIndex, directionOrIndex);
+  } else if (Number.isInteger(directionOrIndex) && directionOrIndex >= 0) {
+    // It's a specific track index
+    targetIndex = directionOrIndex;
+  } else {
+    // No direction or index specified, use current track
+    targetIndex = getCurrentTrackIndex();
+  }
+
+  if (targetIndex === null || targetIndex < 0 || targetIndex >= playerState.tracks.length) return;
 
   const target = playerState.tracks[targetIndex];
   if (!target) return;
@@ -590,14 +629,13 @@ async function togglePlay(direction) {
   const { audio, btnPlay } = target;
 
   // Always reset position to start for prev/next
-  if (direction !== undefined) {
+  if (directionOrIndex === -1 || directionOrIndex === +1) {
     audio.currentTime = 0;
   }
 
-  updateFooter(audio, btnPlay, targetIndex);
   pauseAllOtherTracks(audio);
 
-  if (audio.paused || direction !== undefined) {
+  if (audio.paused || directionOrIndex === -1 || directionOrIndex === +1) {
     scrollToCenterElement(target.container);
 
     const ok = await safePlay(audio);
@@ -613,6 +651,9 @@ async function togglePlay(direction) {
     updateMediaSession(targetIndex, 'playing');
     updateActiveTrackClass(targetIndex);
     updateNowPlayingDisplay();
+
+    // Update footer after play operation completes
+    updateFooter(audio, btnPlay, targetIndex);
   } else {
     audio.pause();
     // When pausing, stop buffering indication
@@ -859,38 +900,8 @@ function createTrackElement(data, idx) {
   });
 
   /* Track-level play/pause control */
-  trackPlayPauseBtn.addEventListener('click', async () => {
-    if (audioElement.paused) {
-      // Pause other tracks
-      playerState.tracks.forEach(({ audio, btnPlay }, i) => {
-        if (i !== idx) {
-          audio?.pause();
-          btnPlay.innerHTML = ICONS.play;
-          btnPlay.setAttribute('aria-pressed', 'false');
-        }
-      });
-
-      const ok = await safePlay(audioElement);
-      if (!ok) return;
-
-      // Set to buffering initially - the playing event will update it when ready
-      updateBufferingUI(idx);
-      trackPlayPauseBtn.setAttribute('aria-pressed', 'true');
-      playerState.playingIndex = idx;
-      updateFooter(audioElement, trackPlayPauseBtn, idx);
-      scrollToCenterElement(trackItemDiv);
-      updateMediaSession(idx, 'playing');
-      updateActiveTrackClass(idx);
-    } else {
-      audioElement.pause();
-      // When pausing, stop buffering indication
-      updateBufferingUI(-1);
-      trackPlayPauseBtn.innerHTML = ICONS.play;
-      trackPlayPauseBtn.setAttribute('aria-pressed', 'false');
-      // Don't reset playingIndex when pausing - this keeps the "now playing" display visible
-      updateMediaSession(idx, 'paused');
-      updateActiveTrackClass(idx);
-    }
+  trackPlayPauseBtn.addEventListener('click', () => {
+    togglePlay(idx);
   });
 
   /* Unified pointer interactions for waveform hovering and seeking */
