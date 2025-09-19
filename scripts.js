@@ -635,6 +635,21 @@ const updatePauseStateUI = (audio, playBtn) => {
 };
 
 /**
+ * Closes all track details panels
+ */
+const closeTrackDetails = () => {
+  // Close all visible track details
+  document.querySelectorAll('.track-details-content.visible').forEach(el => {
+    el.classList.remove('visible');
+  });
+
+  // Update all details buttons to show collapsed state
+  document.querySelectorAll('.track-details-btn[aria-expanded="true"]').forEach(btn => {
+    btn.setAttribute('aria-expanded', 'false');
+  });
+};
+
+/**
  * Centralized play/pause/resume toggle
  * @param {number} [directionOrIndex] -1 for previous track, +1 for next track, or specific track index
  */
@@ -661,43 +676,64 @@ const togglePlay = async (directionOrIndex) => {
 
   const { audio, btnPlay } = target;
 
-  // Always reset position to start for prev/next
-  if (directionOrIndex === -1 || directionOrIndex === +1) {
-    audio.currentTime = 0;
-  }
+  // Determine the playback scenario
+  const isNewTrack = targetIndex !== playerState.playingIndex;
+  const isPaused = audio.paused;
 
-  pauseAllOtherTracks(audio);
+  // Handle different playback scenarios
+  switch (true) {
+    case isNewTrack && isPaused:
+      // Case: A new track gets started
+      audio.currentTime = 0;
+      closeTrackDetails();
+      scrollToCenterElement(target.container);
+      pauseAllOtherTracks(audio);
 
-  if (audio.paused || directionOrIndex === -1 || directionOrIndex === +1) {
-    scrollToCenterElement(target.container);
+      const ok = await safePlay(audio);
+      if (!ok) return;
 
-    const ok = await safePlay(audio);
-    if (!ok) return;
+      playerState.playingIndex = targetIndex;
 
-    playerState.playingIndex = targetIndex;
+      // Sync hash & scroll to active track
+      const trackId = target.container.id;
+      if (window.location.hash.slice(1) !== trackId) {
+        history.pushState({}, '', `#${trackId}`);
+      }
 
-    // Sync hash & scroll to active track
-    const trackId = target.container.id;
-    if (window.location.hash.slice(1) !== trackId) {
-      history.pushState({}, '', `#${trackId}`);
-    }
-    updateMediaSession(targetIndex, 'playing');
-    updateActiveTrackClass(targetIndex);
-    updateNowPlayingDisplay();
+      updateMediaSession(targetIndex, 'playing');
+      updateActiveTrackClass(targetIndex);
+      updateNowPlayingDisplay();
+      updateFooter(audio, btnPlay, targetIndex);
+      break;
 
-    // Update footer after play operation completes
-    updateFooter(audio, btnPlay, targetIndex);
-  } else {
-    audio.pause();
-    // When pausing, stop buffering indication
-    updateBufferingUI(-1);
-    updatePauseStateUI(audio, btnPlay);
-    // Don't reset playingIndex when pausing - this keeps the "now playing" display visible
-    updateMediaSession(targetIndex, 'paused');
-    updateActiveTrackClass(targetIndex);
-    updateNowPlayingDisplay();
+    case !isNewTrack && isPaused:
+      // Case: The active track gets resumed
+      scrollToCenterElement(target.container);
+
+      const resumeOk = await safePlay(audio);
+      if (!resumeOk) return;
+
+      updateMediaSession(targetIndex, 'playing');
+      updateFooter(audio, btnPlay, targetIndex);
+      break;
+
+    case !isNewTrack && !isPaused:
+      // Case: The active track gets paused
+      audio.pause();
+      // When pausing, stop buffering indication
+      updateBufferingUI(-1);
+      updatePauseStateUI(audio, btnPlay);
+      // Don't reset playingIndex when pausing - this keeps the "now playing" display visible
+      updateMediaSession(targetIndex, 'paused');
+      break;
+
+    default:
+      // Fallback case (shouldn't happen with current logic)
+      console.warn('Unhandled playback scenario in togglePlay');
+      break;
   }
 };
+
 
 /* ============================================================================
   6. TRACK ELEMENT CREATION AND PER-TRACK INTERACTION WIRING
